@@ -20,6 +20,10 @@ import {
   ChevronDown,
   LayoutDashboard,
   Volume2,
+  MessageSquare,
+  List,
+  Book,
+  FileQuestion,
 } from 'lucide-react';
 import { useState } from 'react';
 import { Slider } from '@/components/ui/slider';
@@ -114,7 +118,30 @@ export function SidebarNavigation() {
           </SidebarMenuButton>
           {aiToolsOpen && (
             <SidebarMenuSub>
-              {/* AI Tool sub-items will go here */}
+              <SidebarMenuSubItem>
+                  <SidebarMenuSubButton href="#">
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      <span>Chat with Document</span>
+                  </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+              <SidebarMenuSubItem>
+                  <SidebarMenuSubButton href="#">
+                      <List className="mr-2 h-4 w-4" />
+                      <span>Summarize & Key Points</span>
+                  </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+              <SidebarMenuSubItem>
+                  <SidebarMenuSubButton href="#">
+                      <Book className="mr-2 h-4 w-4" />
+                      <span>Create Glossary</span>
+                  </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+              <SidebarMenuSubItem>
+                  <SidebarMenuSubButton href="#">
+                      <FileQuestion className="mr-2 h-4 w-4" />
+                      <span>Generate Quiz</span>
+                  </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
             </SidebarMenuSub>
           )}
         </SidebarMenuItem>

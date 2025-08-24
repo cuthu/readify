@@ -17,5 +17,9 @@ export {
     Lock,
     Mail,
     PanelLeft,
-    Volume2
+    Volume2,
+    MessageSquare,
+    List,
+    Book,
+    FileQuestion
 } from 'lucide-react';
