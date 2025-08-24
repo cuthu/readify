@@ -37,7 +37,7 @@ import { audioConversion } from '@/ai/flows/audio-conversion';
 
 const voices = {
   "OpenAI": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
-  "Amazon": ["ivy", "joanna", "kendra"],
+  "Amazon": ["ivy", "joanna", "kendra", "kimberly", "salli", "joey", "justin", "matthew"],
 };
 
 const openDialog = (id: string) => {
