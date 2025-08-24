@@ -8,6 +8,7 @@ export async function extractTextFromPdf(fileDataUri: string) {
     }
     const base64Data = fileDataUri.substring('data:application/pdf;base64,'.length);
     const buffer = Buffer.from(base64Data, 'base64');
+    
     const data = await pdf(buffer);
     return data.text;
 }
