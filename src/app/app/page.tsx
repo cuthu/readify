@@ -210,7 +210,6 @@ export default function App() {
     }
   }
 
-
   return (
     <main className="p-4 flex flex-col gap-4">
         {/* AI Tool Dialogs */}
