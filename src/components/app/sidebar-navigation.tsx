@@ -125,13 +125,13 @@ export function SidebarNavigation() {
                   </SidebarMenuSubButton>
               </SidebarMenuSubItem>
               <SidebarMenuSubItem>
-                  <SidebarMenuSubButton href="#">
+                  <SidebarMenuSubButton href="/app/summarize">
                       <List className="mr-2 h-4 w-4" />
                       <span>Summarize & Key Points</span>
                   </SidebarMenuSubButton>
               </SidebarMenuSubItem>
               <SidebarMenuSubItem>
-                  <SidebarMenuSubButton href="#">
+                  <SidebarMenuSubButton href="/app/summarize">
                       <Book className="mr-2 h-4 w-4" />
                       <span>Create Glossary</span>
                   </SidebarMenuSubButton>
