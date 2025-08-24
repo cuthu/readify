@@ -14,6 +14,7 @@ import {
   addDocument as addDocumentToService,
   deleteDocument as deleteDocumentFromService,
   deleteDocuments as deleteDocumentsFromService,
+  updateDocument as updateDocumentInService,
 } from '@/services/document-service';
 import { put } from '@vercel/blob';
 
@@ -38,8 +39,8 @@ export async function uploadDocument(formData: FormData): Promise<{ url?: string
 
 // Helper to extract text from different file types on the server
 const extractTextFromServer = async (url: string, fileName: string): Promise<string> => {
-    // PDF text extraction is now handled on the client side to avoid server-side environment issues.
-    if (fileName.endsWith('.pdf')) {
+    if (fileName.endsWith('.pdf') || fileName.endsWith('.docx')) {
+        // Client-side handles PDF and DOCX text extraction
         return '';
     }
 
@@ -49,16 +50,11 @@ const extractTextFromServer = async (url: string, fileName: string): Promise<str
     }
     const arrayBuffer = await response.arrayBuffer();
     
-    if (fileName.endsWith('.docx')) {
-        // docx-preview cannot be used on the server as it requires the `document` object.
-        // Returning an empty string to prevent a crash.
-        console.warn("Server-side text extraction for .docx is not supported. Content will be empty.");
-        return '';
-    } else if (fileName.endsWith('.txt')) {
+    if (fileName.endsWith('.txt')) {
         return Buffer.from(arrayBuffer).toString('utf-8');
     }
 
-    throw new Error('Unsupported file type for text extraction.');
+    throw new Error('Unsupported file type for server-side text extraction.');
 };
 
 
@@ -111,6 +107,14 @@ export async function deleteDocuments(ids: string[]): Promise<{ success: boolean
     return deleteDocumentsFlow(ids);
 }
 
+const AddAudioToDocumentInputSchema = z.object({
+    documentId: z.string(),
+    audioDataUri: z.string(),
+});
+export async function addAudioToDocument(input: z.infer<typeof AddAudioToDocumentInputSchema>): Promise<{ success: boolean }> {
+    return addAudioToDocumentFlow(input);
+}
+
 
 // Genkit Flows
 const getDocumentsFlow = ai.defineFlow(
@@ -145,4 +149,17 @@ const deleteDocumentsFlow = ai.defineFlow(
       await deleteDocumentsFromService(ids);
       return { success: true };
     }
-  );
+);
+
+const addAudioToDocumentFlow = ai.defineFlow(
+    {
+        name: 'addAudioToDocumentFlow',
+        inputSchema: AddAudioToDocumentInputSchema,
+        outputSchema: z.object({ success: z.boolean() }),
+    },
+    async ({ documentId, audioDataUri }) => {
+        await updateDocumentInService(documentId, { audioDataUri });
+        return { success: true };
+    }
+);
+

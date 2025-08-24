@@ -53,6 +53,26 @@ export async function addDocument(doc: Omit<Document, 'id' | 'createdAt'>): Prom
 }
 
 /**
+ * Updates an existing document's data.
+ * @param id - The ID of the document to update.
+ * @param data - The partial document data to update.
+ * @returns A promise that resolves to the updated document or null if not found.
+ */
+export async function updateDocument(id: string, data: Partial<Omit<Document, 'id'>>): Promise<Document | null> {
+    const documentMap = await redis.get<Record<string, Document>>(DOCUMENTS_KEY);
+    if (!documentMap || !documentMap[id]) {
+        return null;
+    }
+
+    const updatedDocument = { ...documentMap[id], ...data };
+    
+    documentMap[id] = updatedDocument;
+    await redis.set(DOCUMENTS_KEY, documentMap);
+
+    return updatedDocument;
+}
+
+/**
  * Deletes a document by its ID.
  * @param id - The ID of the document to delete.
  * @returns A promise that resolves when the document is deleted.

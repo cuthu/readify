@@ -1,14 +1,14 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SummarizeDialog } from '@/components/app/main/summarize-dialog';
 import { LearnDialog } from '@/components/app/main/learn-dialog';
 import { TtsTab } from '@/components/app/main/tts-tab';
 import { UploadTab } from '@/components/app/main/upload-tab';
-import { uploadDocument, processAndSaveDocument } from '@/ai/flows/document-management';
+import { uploadDocument, processAndSaveDocument, addAudioToDocument } from '@/ai/flows/document-management';
 import { audioConversion } from '@/ai/flows/audio-conversion';
 import { Document } from '@/types/document';
 import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
@@ -20,7 +20,8 @@ import { PlayerBar } from '@/components/app/main/player-bar';
 
 export default function App() {
   const { user } = useAuth();
-  const [activeDocument, setActiveDocument] = useState<File | Document | null>(null);
+  const [activeDocument, setActiveDocument] = useState<Document | null>(null);
+  const [localFile, setLocalFile] = useState<File | null>(null);
   const [documentContent, setDocumentContent] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [activeTab, setActiveTab] = useState('upload');
@@ -58,15 +59,25 @@ export default function App() {
     }
 
     // --- Immediate UI Update ---
-    setActiveDocument(file);
-    setDocumentContent(''); // Clear old content
+    const tempDoc: Document = {
+      id: `local-${Date.now()}`,
+      name: file.name,
+      content: '',
+      url: URL.createObjectURL(file),
+      userId: user.id,
+      userEmail: user.email,
+      createdAt: new Date().toISOString(),
+    };
+
+    setActiveDocument(tempDoc);
+    setLocalFile(file);
+    setDocumentContent('');
     resetAudioState();
     setIsProcessingFile(true);
 
 
     // --- Background Processing ---
     try {
-      // Step 1: Upload the file to Vercel Blob storage
       const formData = new FormData();
       formData.append('file', file);
       const { url, error: uploadError } = await uploadDocument(formData);
@@ -75,12 +86,6 @@ export default function App() {
         throw new Error(uploadError || 'File upload failed.');
       }
       
-      toast({
-        title: 'Upload Complete',
-        description: `Processing "${file.name}" in the background.`,
-      });
-
-      // Step 2: Trigger the backend flow to process the file
       const savedDoc = await processAndSaveDocument({ 
         fileName: file.name, 
         url,
@@ -88,7 +93,10 @@ export default function App() {
         userEmail: user.email,
       });
 
-      // Step 3: Update the UI with the processed content if it was extracted on server
+      // Once saved, update the active document with the real one from DB
+      setActiveDocument(savedDoc);
+      
+      // Update content if it was extracted on the server (e.g. for .txt)
       if (savedDoc.content) {
         setDocumentContent(savedDoc.content);
          toast({
@@ -97,7 +105,6 @@ export default function App() {
         });
       }
       
-      // This custom event will trigger a refresh in the sidebar
       window.dispatchEvent(new CustomEvent('document-added'));
 
     } catch(e: any) {
@@ -106,8 +113,8 @@ export default function App() {
           description: e.message || 'There was a problem processing your file.',
           variant: 'destructive'
         });
-        // If processing fails, reset the view
         setActiveDocument(null);
+        setLocalFile(null);
     } finally {
       setIsProcessingFile(false);
     }
@@ -115,29 +122,16 @@ export default function App() {
   
   const handleDocumentSelect = (doc: Document) => {
     setActiveDocument(doc);
+    setLocalFile(null); // It's a saved document, not a local file
     setDocumentContent(doc.content || '');
     resetAudioState();
-    if (doc.content) {
-      toast({
-        title: 'Document Loaded',
-        description: `"${doc.name}" is ready for audio generation and AI tools.`,
-      })
-    } else if (doc.name.endsWith('.pdf')) {
-      toast({
-        title: 'Document Loaded',
-        description: `PDF loaded. AI tools will be available after text is extracted.`,
-      })
-    } else {
-       toast({
-        title: 'No Content',
-        description: `This document has no extracted text. AI tools may not work.`,
-        variant: 'destructive',
-      })
+    if(doc.audioDataUri) {
+      setAudioDataUri(doc.audioDataUri);
     }
   }
 
   const handleGenerateAudio = async () => {
-    if (!documentContent) {
+    if (!documentContent || !activeDocument) {
         toast({ title: 'No Content', description: 'There is no text to generate audio from.', variant: 'destructive' });
         return;
     }
@@ -146,7 +140,11 @@ export default function App() {
     try {
         const result = await audioConversion({ text: documentContent, voiceName: selectedVoice });
         setAudioDataUri(result.audioDataUri);
-        toast({ title: 'Success', description: 'Audio generated successfully.' });
+        
+        // Save the audio to the document in the background
+        await addAudioToDocument({ documentId: activeDocument.id, audioDataUri: result.audioDataUri });
+
+        toast({ title: 'Success', description: 'Audio generated and saved successfully.' });
     } catch (error) {
         toast({ title: 'Audio Generation Failed', description: 'Could not generate audio. Please try again.', variant: 'destructive' });
         console.error("Audio generation error", error);
@@ -154,6 +152,17 @@ export default function App() {
         setIsGeneratingAudio(false);
     }
   };
+  
+  const handleTextExtracted = useCallback((text: string) => {
+    setDocumentContent(text);
+    if (isProcessingFile) { // For initial upload
+       toast({
+          title: 'Ready to Go!',
+          description: `Content extracted. You can now generate audio.`,
+        });
+    }
+  }, [isProcessingFile]);
+
 
   const resetAudioState = () => {
       if (audioRef.current) {
@@ -239,12 +248,7 @@ export default function App() {
     }
   };
 
-  const getFileOrUrl = () => {
-    if (!activeDocument) return '';
-    return activeDocument instanceof File ? URL.createObjectURL(activeDocument) : activeDocument.url;
-  }
-
-  const isDocumentReadyForAudio = !!documentContent && !isProcessingFile;
+  const isDocumentReadyForAudio = !!documentContent && (!isProcessingFile || localFile !== null);
 
   return (
     <SidebarProvider>
@@ -266,17 +270,9 @@ export default function App() {
                 {activeDocument ? (
                   <div className="flex-1 flex flex-col h-full min-h-0">
                     <DocumentViewer 
-                        file={getFileOrUrl()} 
+                        file={localFile || activeDocument.url} 
                         scale={scale} 
-                        onTextExtracted={(text) => {
-                            if (!documentContent) { // Only set if not already set (e.g., from .txt)
-                                setDocumentContent(text);
-                                toast({
-                                    title: 'Content Ready',
-                                    description: 'PDF text has been extracted and AI tools are now active.',
-                                });
-                            }
-                        }}
+                        onTextExtracted={handleTextExtracted}
                     />
                      <PlayerBar 
                         onGenerateAudio={handleGenerateAudio}
@@ -308,7 +304,7 @@ export default function App() {
                               onFileSelect={onFileSelect}
                               isDragging={isDragging}
                               isProcessing={isProcessingFile}
-                              uploadedFile={activeDocument instanceof File ? activeDocument : null}
+                              uploadedFile={localFile}
                           />
                       </TabsContent>
                       <TabsContent value="tts">
