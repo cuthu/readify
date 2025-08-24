@@ -161,7 +161,7 @@ export default function App() {
           description: `Content extracted. You can now generate audio.`,
         });
     }
-  }, [isProcessingFile]);
+  }, [isProcessingFile, toast]);
 
 
   const resetAudioState = () => {
