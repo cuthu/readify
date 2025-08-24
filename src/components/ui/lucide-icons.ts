@@ -22,5 +22,7 @@ export {
     List,
     Book,
     FileQuestion,
-    Send
+    Send,
+    MoreHorizontal,
+    PlusCircle
 } from 'lucide-react';

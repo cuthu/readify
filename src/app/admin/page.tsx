@@ -4,39 +4,50 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getDocuments } from '@/ai/flows/document-management';
+import { getUsers } from '@/ai/flows/user-management';
 import { Document } from '@/types/document';
+import { User } from '@/types/user';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function AdminDashboard() {
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function loadDocuments() {
+    async function loadData() {
       try {
-        const docs = await getDocuments();
+        const [docs, usersData] = await Promise.all([
+            getDocuments(),
+            getUsers()
+        ]);
         setDocuments(docs);
+        setUsers(usersData);
       } catch (error) {
-        console.error("Failed to fetch documents", error);
+        console.error("Failed to fetch dashboard data", error);
         // Optionally, show a toast notification for the error
       } finally {
         setIsLoading(false);
       }
     }
-    loadDocuments();
+    loadData();
   }, []);
 
 
   return (
     <div className="flex flex-col gap-4">
-       <h1 className="text-2xl font-bold font-headline">Admin Dashboard</h1>
+       <h2 className="text-xl font-bold font-headline">Dashboard</h2>
        <div className="grid gap-4 md:grid-cols-2">
             <Card>
                 <CardHeader>
                     <CardTitle>Total Users</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-4xl font-bold">0</p>
+                    {isLoading ? (
+                        <Skeleton className="h-10 w-16" />
+                    ) : (
+                        <p className="text-4xl font-bold">{users.length}</p>
+                    )}
                 </CardContent>
             </Card>
             <Card>
