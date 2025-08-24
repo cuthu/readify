@@ -9,6 +9,7 @@ import { LearnDialog } from '@/components/app/main/learn-dialog';
 import { TtsTab } from '@/components/app/main/tts-tab';
 import { UploadTab } from '@/components/app/main/upload-tab';
 import { addDocument, Document } from '@/ai/flows/document-management';
+import { processFile } from '@/ai/flows/process-file';
 import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app/sidebar-content';
 
@@ -19,48 +20,86 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('upload');
   const [selectedVoice, setSelectedVoice] = useState('alloy');
   const [speakingRate, setSpeakingRate] = useState(1.0);
+  const [isProcessingFile, setIsProcessingFile] = useState(false);
   const { toast } = useToast();
+  
+  const saveDocument = async (name: string, content: string) => {
+    try {
+      await addDocument({ name, content });
+      toast({
+        title: 'Success!',
+        description: `"${name}" has been uploaded and saved.`,
+      });
+      // This custom event will trigger a refresh in the sidebar
+      window.dispatchEvent(new CustomEvent('document-added'));
+      return true;
+    } catch (error) {
+       toast({
+        title: 'Error Saving Document',
+        description: 'There was a problem saving your document.',
+        variant: 'destructive'
+      });
+      return false;
+    }
+  }
+
 
   const handleFileChange = (file: File | null) => {
     if (file && (file.type === 'application/pdf' || file.type.includes('document') || file.type === 'text/plain')) {
       setUploadedFile(file);
       setDocumentContent('');
+      
+      const reader = new FileReader();
 
-       if (file.type === 'text/plain') {
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-            const content = event.target?.result as string;
-            setDocumentContent(content);
-            try {
-              await addDocument({ name: file.name, content });
-              toast({
-                title: 'Success!',
-                description: `"${file.name}" has been uploaded and saved.`,
-              });
-               // This custom event will trigger a refresh in the sidebar
-               window.dispatchEvent(new CustomEvent('document-added'));
-            } catch (error) {
+      reader.onload = async (event) => {
+          const fileData = event.target?.result as string;
+          let content = '';
+
+          setIsProcessingFile(true);
+
+          try {
+            if (file.type === 'text/plain') {
+              content = fileData;
+            } else if (file.type === 'application/pdf') {
+              const result = await processFile({ fileDataUri: fileData });
+              content = result.textContent;
+            } else {
                toast({
-                title: 'Error Saving Document',
-                description: 'There was a problem saving your document.',
+                  title: 'Unsupported File Type',
+                  description: 'Currently, only .txt and .pdf files can be processed.',
+                  variant: 'destructive'
+              });
+              setIsProcessingFile(false);
+              return;
+            }
+
+            setDocumentContent(content);
+            const saved = await saveDocument(file.name, content);
+            if (saved) {
+              setActiveTab('tts'); // Switch to TTS tab after successful upload
+            }
+          } catch(e) {
+             toast({
+                title: 'Error Processing File',
+                description: 'There was a problem reading the content of your file.',
                 variant: 'destructive'
               });
-            }
-            setActiveTab('tts'); // Switch to TTS tab after successful upload
-        };
+          } finally {
+            setIsProcessingFile(false);
+          }
+      };
+
+      if (file.type === 'text/plain') {
         reader.readAsText(file);
       } else {
-        toast({
-            title: 'Unsupported File Type for Now',
-            description: 'Currently, only .txt files can be processed directly. Please convert your document to a text file.',
-            variant: 'destructive'
-        })
+        reader.readAsDataURL(file);
       }
+
 
     } else {
       toast({
         title: 'Invalid File Type',
-        description: 'Please upload a .pdf, .docx, or .txt file.',
+        description: 'Please upload a .pdf or .txt file.',
         variant: 'destructive',
       });
       setUploadedFile(null);
@@ -146,6 +185,7 @@ export default function App() {
                             onDrop={onDrop}
                             onFileSelect={onFileSelect}
                             isDragging={isDragging}
+                            isProcessing={isProcessingFile}
                             uploadedFile={uploadedFile}
                         />
                     </TabsContent>
