@@ -119,7 +119,7 @@ export function SidebarNavigation() {
           {aiToolsOpen && (
             <SidebarMenuSub>
               <SidebarMenuSubItem>
-                  <SidebarMenuSubButton href="#">
+                  <SidebarMenuSubButton href="/app/learn">
                       <MessageSquare className="mr-2 h-4 w-4" />
                       <span>Chat with Document</span>
                   </SidebarMenuSubButton>
@@ -137,7 +137,7 @@ export function SidebarNavigation() {
                   </SidebarMenuSubButton>
               </SidebarMenuSubItem>
               <SidebarMenuSubItem>
-                  <SidebarMenuSubButton href="#">
+                  <SidebarMenuSubButton href="/app/learn">
                       <FileQuestion className="mr-2 h-4 w-4" />
                       <span>Generate Quiz</span>
                   </SidebarMenuSubButton>
