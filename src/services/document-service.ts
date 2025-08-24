@@ -1,9 +1,10 @@
 
 /**
- * @fileOverview A service for managing documents.
- * This is a mock implementation that uses an in-memory array.
- * It will be replaced with a real database implementation (e.g., Upstash KV).
+ * @fileOverview A service for managing documents using Upstash KV.
  */
+
+import { Redis } from "@upstash/redis";
+import { randomUUID } from "crypto";
 
 // Define the Document type
 export interface Document {
@@ -12,22 +13,27 @@ export interface Document {
   content: string;
 }
 
-// In-memory array to act as a mock database
-let documents: Document[] = [
-  { id: '1', name: 'Initial Document.txt', content: 'This is a sample document that was here from the start.' },
-  { id: '2', name: 'Another Example.txt', content: 'This is another sample document.' },
-];
+// Initialize the Upstash Redis client
+// This will automatically use the UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN
+// environment variables.
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
 
-let nextId = 3;
+
+const DOCUMENTS_KEY = "documents";
 
 /**
  * Retrieves all documents.
  * @returns A promise that resolves to an array of documents.
  */
 export async function getDocuments(): Promise<Document[]> {
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  return documents;
+  const documentMap = await redis.get<Record<string, Document>>(DOCUMENTS_KEY);
+  if (!documentMap) {
+    return [];
+  }
+  return Object.values(documentMap);
 }
 
 /**
@@ -36,9 +42,14 @@ export async function getDocuments(): Promise<Document[]> {
  * @returns A promise that resolves to the newly created document with an ID.
  */
 export async function addDocument(doc: Omit<Document, 'id'>): Promise<Document> {
-  await new Promise(resolve => setTimeout(resolve, 300));
-  const newDoc = { ...doc, id: String(nextId++) };
-  documents.push(newDoc);
+  const newId = randomUUID();
+  const newDoc: Document = { ...doc, id: newId };
+  
+  // Fetch the current documents map, add the new one, and set it back
+  const documentMap = await redis.get<Record<string, Document>>(DOCUMENTS_KEY) || {};
+  documentMap[newId] = newDoc;
+  await redis.set(DOCUMENTS_KEY, documentMap);
+
   return newDoc;
 }
 
@@ -48,6 +59,9 @@ export async function addDocument(doc: Omit<Document, 'id'>): Promise<Document> 
  * @returns A promise that resolves when the document is deleted.
  */
 export async function deleteDocument(id:string): Promise<void> {
-  await new Promise(resolve => setTimeout(resolve, 300));
-  documents = documents.filter(doc => doc.id !== id);
+  const documentMap = await redis.get<Record<string, Document>>(DOCUMENTS_KEY);
+  if (documentMap && documentMap[id]) {
+    delete documentMap[id];
+    await redis.set(DOCUMENTS_KEY, documentMap);
+  }
 }
