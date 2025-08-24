@@ -70,7 +70,7 @@ export function SidebarNavigation() {
                                 <SelectItem key={voice} value={voice}>
                                     <div className="flex items-center justify-between w-full">
                                         <span>{voice.charAt(0).toUpperCase() + voice.slice(1)}</span>
-                                        <Volume2 className="ml-2 h-4 w-4 text-muted-foreground hover:text-foreground" onClick={(e) => handlePreviewVoice(e, voice)} />
+                                        <Volume2 className="ml-4 h-4 w-4 text-muted-foreground hover:text-foreground" onClick={(e) => handlePreviewVoice(e, voice)} />
                                     </div>
                                 </SelectItem>
                             ))}
