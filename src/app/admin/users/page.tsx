@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { MoreHorizontal, PlusCircle } from 'lucide-react';
+import { MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -11,22 +11,25 @@ import { getUsers } from '@/ai/flows/user-management';
 import { User } from '@/types/user';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
+import { AddUserDialog } from '@/components/admin/users/add-user-dialog';
 
 export default function UserManagementPage() {
     const [users, setUsers] = useState<User[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        async function loadUsers() {
-            try {
-                const fetchedUsers = await getUsers();
-                setUsers(fetchedUsers);
-            } catch (error) {
-                console.error("Failed to fetch users", error);
-            } finally {
-                setIsLoading(false);
-            }
+    const loadUsers = async () => {
+        setIsLoading(true);
+        try {
+            const fetchedUsers = await getUsers();
+            setUsers(fetchedUsers);
+        } catch (error) {
+            console.error("Failed to fetch users", error);
+        } finally {
+            setIsLoading(false);
         }
+    }
+
+    useEffect(() => {
         loadUsers();
     }, []);
 
@@ -38,10 +41,7 @@ export default function UserManagementPage() {
                         <CardTitle>User Management</CardTitle>
                         <CardDescription>View, add, and manage user accounts.</CardDescription>
                     </div>
-                    <Button>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Add User
-                    </Button>
+                    <AddUserDialog onUserAdded={loadUsers} />
                 </div>
             </CardHeader>
             <CardContent>
