@@ -6,3 +6,4 @@ import '@/ai/flows/interactive-learning.ts';
 import '@/ai/flows/audio-conversion.ts';
 import '@/ai/flows/document-management.ts';
 import '@/ai/flows/user-management.ts';
+import '@/ai/flows/auth.ts';
