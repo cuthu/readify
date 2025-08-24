@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SummarizeDialog } from '@/components/app/main/summarize-dialog';
@@ -9,6 +9,8 @@ import { LearnDialog } from '@/components/app/main/learn-dialog';
 import { TtsTab } from '@/components/app/main/tts-tab';
 import { UploadTab } from '@/components/app/main/upload-tab';
 import { addDocument, Document } from '@/ai/flows/document-management';
+import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
+import { AppSidebar } from '@/components/app/sidebar-content';
 
 export default function App() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -115,35 +117,48 @@ export default function App() {
   };
 
   return (
-    <div className="p-4 flex flex-col gap-4">
-        {/* AI Tool Dialogs */}
-        <SummarizeDialog documentContent={documentContent} />
-        <LearnDialog documentContent={documentContent} />
-        
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="upload">Upload Document</TabsTrigger>
-                <TabsTrigger value="tts">Text to Speech</TabsTrigger>
-            </TabsList>
-            <TabsContent value="upload">
-                 <UploadTab 
-                    onDragEnter={onDragEnter}
-                    onDragLeave={onDragLeave}
-                    onDragOver={onDragOver}
-                    onDrop={onDrop}
-                    onFileSelect={onFileSelect}
-                    isDragging={isDragging}
-                    uploadedFile={uploadedFile}
-                 />
-            </TabsContent>
-            <TabsContent value="tts">
-                 <TtsTab 
-                    initialText={documentContent} 
+    <SidebarProvider>
+        <Sidebar>
+            <AppSidebar 
+                    onDocumentSelect={handleDocumentSelect}
+                    onVoiceChange={setSelectedVoice}
+                    onRateChange={setSpeakingRate}
                     selectedVoice={selectedVoice}
                     speakingRate={speakingRate}
-                 />
-            </TabsContent>
-        </Tabs>
-    </div>
+            />
+        </Sidebar>
+        <SidebarInset>
+            <div data-page="app-main" className="p-4 flex flex-col gap-4">
+                {/* AI Tool Dialogs */}
+                <SummarizeDialog documentContent={documentContent} />
+                <LearnDialog documentContent={documentContent} />
+                
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="upload">Upload Document</TabsTrigger>
+                        <TabsTrigger value="tts">Text to Speech</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="upload">
+                        <UploadTab 
+                            onDragEnter={onDragEnter}
+                            onDragLeave={onDragLeave}
+                            onDragOver={onDragOver}
+                            onDrop={onDrop}
+                            onFileSelect={onFileSelect}
+                            isDragging={isDragging}
+                            uploadedFile={uploadedFile}
+                        />
+                    </TabsContent>
+                    <TabsContent value="tts">
+                        <TtsTab 
+                            initialText={documentContent} 
+                            selectedVoice={selectedVoice}
+                            speakingRate={speakingRate}
+                        />
+                    </TabsContent>
+                </Tabs>
+            </div>
+        </SidebarInset>
+    </SidebarProvider>
   );
 }
