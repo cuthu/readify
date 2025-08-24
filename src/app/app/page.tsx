@@ -262,18 +262,20 @@ export default function App() {
             />
         </Sidebar>
         <SidebarInset>
-            <div data-page="app-main" className="p-4 flex flex-col gap-4 h-full">
+            <div data-page="app-main" className="p-4 flex flex-col h-full">
                 {/* AI Tool Dialogs */}
                 <SummarizeDialog documentContent={documentContent} />
                 <LearnDialog documentContent={documentContent} />
                 
                 {activeDocument ? (
                   <div className="flex-1 flex flex-col h-full min-h-0">
-                    <DocumentViewer 
-                        file={localFile || activeDocument.url} 
-                        scale={scale} 
-                        onTextExtracted={handleTextExtracted}
-                    />
+                    <div className="flex-1 overflow-auto">
+                        <DocumentViewer 
+                            file={localFile || activeDocument.url} 
+                            scale={scale} 
+                            onTextExtracted={handleTextExtracted}
+                        />
+                    </div>
                      <PlayerBar 
                         onGenerateAudio={handleGenerateAudio}
                         onPlayPause={handlePlayPause}

@@ -39,8 +39,8 @@ import { useAuth } from '@/hooks/use-auth';
 import Link from 'next/link';
 
 const voices = {
-  "OpenAI": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
   "Amazon": ["ivy", "joanna", "kendra", "kimberly", "salli", "joey", "justin", "matthew"],
+  "OpenAI": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
 };
 
 const openDialog = (id: string) => {

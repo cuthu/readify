@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -15,8 +16,8 @@ import { PollyClient, SynthesizeSpeechCommand } from '@aws-sdk/client-polly';
 
 // Define the available voices, matching the frontend implementation
 const voices = {
-  "OpenAI": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
   "Amazon": ["ivy", "joanna", "kendra", "kimberly", "salli", "joey", "justin", "matthew"],
+  "OpenAI": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
 };
 
 // Initialize API clients
