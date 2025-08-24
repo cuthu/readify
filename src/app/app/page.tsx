@@ -105,7 +105,6 @@ export default function App() {
         });
       }
       
-      // THIS IS THE FIX: Dispatch event to tell sidebar to refresh
       window.dispatchEvent(new CustomEvent('document-added'));
 
     } catch(e: any) {
@@ -142,8 +141,10 @@ export default function App() {
         const result = await audioConversion({ text: documentContent, voiceName: selectedVoice });
         setAudioDataUri(result.audioDataUri);
         
-        // Save the audio to the document in the background
-        await addAudioToDocument({ documentId: activeDocument.id, audioDataUri: result.audioDataUri });
+        // This check ensures we don't try to save audio for a temporary local file
+        if (!activeDocument.id.startsWith('local-')) {
+           await addAudioToDocument({ documentId: activeDocument.id, audioDataUri: result.audioDataUri });
+        }
 
         toast({ title: 'Success', description: 'Audio generated and saved successfully.' });
     } catch (error) {
@@ -159,7 +160,7 @@ export default function App() {
     if (isProcessingFile) { // For initial upload
        toast({
           title: 'Ready to Go!',
-          description: `Content extracted. You can now generate audio.`,
+          description: `Content extracted. You can now use the AI tools.`,
         });
     }
   }, [isProcessingFile, toast]);
@@ -260,6 +261,7 @@ export default function App() {
                     onRateChange={setSpeakingRate}
                     selectedVoice={selectedVoice}
                     speakingRate={speakingRate}
+                    documentContent={documentContent}
             />
         </Sidebar>
         <SidebarInset>

@@ -16,6 +16,7 @@ interface AppSidebarProps {
   onRateChange: (rate: number) => void;
   selectedVoice: string;
   speakingRate: number;
+  documentContent: string;
 }
 
 
@@ -25,6 +26,7 @@ export function AppSidebar({
     onRateChange,
     selectedVoice,
     speakingRate,
+    documentContent,
 }: AppSidebarProps) {
   const { logout } = useAuth();
 
@@ -45,6 +47,7 @@ export function AppSidebar({
               onRateChange={onRateChange}
               selectedVoice={selectedVoice}
               speakingRate={speakingRate}
+              documentContent={documentContent}
             />
           </div>
           <div>

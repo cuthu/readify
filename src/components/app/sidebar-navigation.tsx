@@ -56,6 +56,7 @@ interface SidebarNavigationProps {
   onRateChange: (rate: number) => void;
   selectedVoice: string;
   speakingRate: number;
+  documentContent: string;
 }
 
 export function SidebarNavigation({
@@ -63,7 +64,8 @@ export function SidebarNavigation({
   onVoiceChange,
   onRateChange,
   selectedVoice,
-  speakingRate
+  speakingRate,
+  documentContent,
 }: SidebarNavigationProps) {
   const { user, isUser } = useAuth();
   const [aiToolsOpen, setAiToolsOpen] = useState(true);
@@ -75,11 +77,14 @@ export function SidebarNavigation({
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
 
+  const isAiToolsDisabled = !documentContent;
+
   const fetchDocuments = async () => {
     setIsLoadingDocs(true);
     try {
       const docs = await getDocuments();
-      setDocuments(docs);
+      const userDocs = docs.filter(doc => doc.userId === user?.id);
+      setDocuments(userDocs);
     } catch (error) {
       toast({
         title: 'Error',
@@ -93,14 +98,18 @@ export function SidebarNavigation({
   };
 
   useEffect(() => {
-    fetchDocuments();
+    if (user) {
+        fetchDocuments();
+    }
     // Listen for the custom event to refresh documents
-    const handleDocAdded = () => fetchDocuments();
+    const handleDocAdded = () => {
+        if(user) fetchDocuments();
+    };
     window.addEventListener('document-added', handleDocAdded);
     return () => {
         window.removeEventListener('document-added', handleDocAdded);
     }
-  }, []);
+  }, [user]);
 
   const handleDeleteDocument = async (e: React.MouseEvent, docId: string) => {
     e.preventDefault();
@@ -126,7 +135,7 @@ export function SidebarNavigation({
   };
 
   const handlePreviewVoice = async (e: React.MouseEvent, voice: string) => {
-    e.stopPropagation(); // THIS IS THE FIX: Prevents the select item from being triggered.
+    e.stopPropagation();
     if (isPreviewingVoice) return;
     
     setIsPreviewingVoice(voice);
@@ -229,25 +238,25 @@ export function SidebarNavigation({
           {aiToolsOpen && (
             <SidebarMenuSub>
               <SidebarMenuSubItem>
-                  <SidebarMenuSubButton onClick={() => openDialog('learn-dialog-trigger')}>
+                  <SidebarMenuSubButton onClick={() => openDialog('learn-dialog-trigger')} disabled={isAiToolsDisabled}>
                       <MessageSquare className="mr-2 h-4 w-4" />
                       <span>Chat with Document</span>
                   </SidebarMenuSubButton>
               </SidebarMenuSubItem>
               <SidebarMenuSubItem>
-                  <SidebarMenuSubButton onClick={() => openDialog('summarize-dialog-trigger')}>
+                  <SidebarMenuSubButton onClick={() => openDialog('summarize-dialog-trigger')} disabled={isAiToolsDisabled}>
                       <List className="mr-2 h-4 w-4" />
                       <span>Summarize & Key Points</span>
                   </SidebarMenuSubButton>
               </SidebarMenuSubItem>
               <SidebarMenuSubItem>
-                  <SidebarMenuSubButton onClick={() => openDialog('summarize-dialog-trigger')}>
+                  <SidebarMenuSubButton onClick={() => openDialog('summarize-dialog-trigger')} disabled={isAiToolsDisabled}>
                       <Book className="mr-2 h-4 w-4" />
                       <span>Create Glossary</span>
                   </SidebarMenuSubButton>
               </SidebarMenuSubItem>
               <SidebarMenuSubItem>
-                  <SidebarMenuSubButton onClick={() => openDialog('learn-dialog-trigger')}>
+                  <SidebarMenuSubButton onClick={() => openDialog('learn-dialog-trigger')} disabled={isAiToolsDisabled}>
                       <FileQuestion className="mr-2 h-4 w-4" />
                       <span>Generate Quiz</span>
                   </SidebarMenuSubButton>
