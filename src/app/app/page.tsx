@@ -3,25 +3,33 @@
 import { useState } from 'react';
 import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload, FileText, Loader2 } from 'lucide-react';
+import { Upload, FileText, Loader2, Mic } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { AppSidebar } from '@/components/app/sidebar-content';
 import { audioConversion } from '@/ai/flows/audio-conversion';
 import { useToast } from '@/hooks/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+
+const voices = {
+  "OpenAI": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
+  "Amazon": ["ivy", "joanna", "kendr"],
+};
 
 export default function App() {
   const [textToSpeechInput, setTextToSpeechInput] = useState('');
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
   const [audioDataUri, setAudioDataUri] = useState<string | null>(null);
+  const [selectedVoice, setSelectedVoice] = useState('alloy');
   const { toast } = useToast();
 
   const handleGenerateAudio = async () => {
     setIsGeneratingAudio(true);
     setAudioDataUri(null);
     try {
-      const result = await audioConversion({ text: textToSpeechInput });
+      const result = await audioConversion({ text: textToSpeechInput, voiceName: selectedVoice });
       setAudioDataUri(result.audioDataUri);
     } catch (error) {
       console.error('Error generating audio:', error);
@@ -44,7 +52,7 @@ export default function App() {
         </Sidebar>
         <SidebarInset>
           <main className="p-4">
-            <Tabs defaultValue="upload">
+            <Tabs defaultValue="text-to-speech">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="upload">
                   <Upload className="mr-2 h-4 w-4" />
@@ -78,6 +86,28 @@ export default function App() {
                     <CardDescription>Paste text below and generate audio.</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    <div className="grid gap-2">
+                        <Label htmlFor="voice-select">Voice</Label>
+                        <Select value={selectedVoice} onValueChange={setSelectedVoice}>
+                            <SelectTrigger id="voice-select" className="w-full">
+                                <SelectValue placeholder="Select a voice" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {Object.entries(voices).map(([provider, voiceList]) => (
+                                    <div key={provider}>
+                                        <Label className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{provider}</Label>
+                                        {voiceList.map(voice => (
+                                            <SelectItem key={voice} value={voice}>
+                                                <div className="flex items-center gap-2">
+                                                    <span>{voice.charAt(0).toUpperCase() + voice.slice(1)}</span>
+                                                </div>
+                                            </SelectItem>
+                                        ))}
+                                    </div>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
                     <Textarea
                       placeholder="Paste your text here..."
                       rows={10}

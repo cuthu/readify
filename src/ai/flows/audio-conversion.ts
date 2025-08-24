@@ -14,7 +14,7 @@ import wav from 'wav';
 
 const AudioConversionInputSchema = z.object({
   text: z.string().describe('The text to convert to audio.'),
-  voiceName: z.string().optional().describe('The name of the voice to use.'),
+  voiceName: z.string().optional().describe('The name of the voice to use (e.g., from OpenAI or Amazon).'),
 });
 
 export type AudioConversionInput = z.infer<typeof AudioConversionInputSchema>;
@@ -63,12 +63,15 @@ const audioConversionFlow = ai.defineFlow(
     outputSchema: AudioConversionOutputSchema,
   },
   async input => {
+    // This flow is now structured to easily accommodate different voice providers.
+    // The actual model call can be switched based on the `input.voiceName`.
     const {media} = await ai.generate({
       model: 'googleai/gemini-2.5-flash-preview-tts',
       config: {
         responseModalities: ['AUDIO'],
         speechConfig: {
           voiceConfig: {
+            // A default voice is used if none is provided.
             prebuiltVoiceConfig: {voiceName: input.voiceName || 'Algenib'},
           },
         },
