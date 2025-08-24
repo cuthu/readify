@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import { MoreHorizontal } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { MoreHorizontal, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -14,13 +14,28 @@ import { format } from 'date-fns';
 import { AddUserDialog } from '@/components/admin/users/add-user-dialog';
 import { DeleteConfirmationDialog } from '@/components/admin/delete-confirmation-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { Input } from '@/components/ui/input';
+import { useAuth } from '@/hooks/use-auth';
+import { EditUserDialog } from '@/components/admin/users/edit-user-dialog';
 
 export default function UserManagementPage() {
+    const { user: currentUser, isAdmin } = useAuth();
     const [users, setUsers] = useState<User[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [userToEdit, setUserToEdit] = useState<User | null>(null);
     const [userToDelete, setUserToDelete] = useState<User | null>(null);
+    const [isEditUserDialogOpen, setIsEditUserDialogOpen] = useState(false);
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
     const { toast } = useToast();
+
+    const handleActionWithoutPermission = () => {
+        toast({
+            title: 'Permission Denied',
+            description: 'Only an Admin can perform this action.',
+            variant: 'destructive',
+        });
+    }
 
     const loadUsers = async () => {
         setIsLoading(true);
@@ -38,8 +53,32 @@ export default function UserManagementPage() {
     useEffect(() => {
         loadUsers();
     }, []);
+    
+    const filteredUsers = useMemo(() => {
+        return users.filter(user =>
+            user.email.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [users, searchTerm]);
+
+    const handleEditClick = (user: User) => {
+        if (!isAdmin()) {
+            handleActionWithoutPermission();
+            return;
+        }
+        setUserToEdit(user);
+        setIsEditUserDialogOpen(true);
+    };
 
     const handleDeleteClick = (user: User) => {
+        if (!isAdmin()) {
+            handleActionWithoutPermission();
+            return;
+        }
+        // Admins can't delete themselves
+        if (currentUser?.id === user.id) {
+            toast({ title: "Action Not Allowed", description: "You cannot delete your own account.", variant: "destructive" });
+            return;
+        }
         setUserToDelete(user);
         setIsDeleteAlertOpen(true);
     };
@@ -63,6 +102,7 @@ export default function UserManagementPage() {
             });
         } finally {
             setUserToDelete(null);
+            setIsDeleteAlertOpen(false);
         }
     };
 
@@ -80,62 +120,95 @@ export default function UserManagementPage() {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Email</TableHead>
-                                <TableHead>Role</TableHead>
-                                <TableHead>Signed Up</TableHead>
-                                <TableHead>Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {isLoading ? (
-                                Array.from({ length: 3 }).map((_, i) => (
-                                    <TableRow key={i}>
-                                        <TableCell><Skeleton className="h-4 w-[250px]" /></TableCell>
-                                        <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
-                                        <TableCell><Skeleton className="h-4 w-[150px]" /></TableCell>
-                                        <TableCell><Skeleton className="h-8 w-8" /></TableCell>
-                                    </TableRow>
-                                ))
-                            ) : users.length > 0 ? (
-                                users.map((user) => (
-                                    <TableRow key={user.id}>
-                                        <TableCell>{user.email}</TableCell>
-                                        <TableCell>{user.role}</TableCell>
-                                        <TableCell>{format(new Date(user.createdAt), 'PPP')}</TableCell>
-                                        <TableCell>
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" className="h-8 w-8 p-0">
-                                                        <span className="sr-only">Open menu</span>
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                    <DropdownMenuItem disabled>Edit Role</DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                                                        onClick={() => handleDeleteClick(user)}
-                                                    >
-                                                        Delete User
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            ) : (
+                    <div className="flex justify-between items-center mb-4">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                type="search"
+                                placeholder="Search by email..."
+                                className="pl-8"
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                    </div>
+                     <div className="rounded-md border">
+                        <Table>
+                            <TableHeader>
                                 <TableRow>
-                                    <TableCell colSpan={4} className="text-center">No users found.</TableCell>
+                                    <TableHead>Email</TableHead>
+                                    <TableHead>Role</TableHead>
+                                    <TableHead>Signed Up</TableHead>
+                                    <TableHead className="w-[100px] text-center">Actions</TableHead>
                                 </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {isLoading ? (
+                                    Array.from({ length: 3 }).map((_, i) => (
+                                        <TableRow key={i}>
+                                            <TableCell><Skeleton className="h-4 w-[250px]" /></TableCell>
+                                            <TableCell><Skeleton className="h-4 w-[80px]" /></TableCell>
+                                            <TableCell><Skeleton className="h-4 w-[150px]" /></TableCell>
+                                            <TableCell><Skeleton className="h-8 w-8" /></TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : filteredUsers.length > 0 ? (
+                                    filteredUsers.map((user) => (
+                                        <TableRow key={user.id}>
+                                            <TableCell>{user.email}</TableCell>
+                                            <TableCell>{user.role}</TableCell>
+                                            <TableCell>{format(new Date(user.createdAt), 'PPP')}</TableCell>
+                                            <TableCell className="text-center">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" className="h-8 w-8 p-0">
+                                                            <span className="sr-only">Open menu</span>
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                        <DropdownMenuItem
+                                                            disabled={!isAdmin() || currentUser?.id === user.id}
+                                                            onClick={() => handleEditClick(user)}
+                                                        >
+                                                            Edit Role
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            disabled={!isAdmin() || currentUser?.id === user.id}
+                                                            className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                                                            onClick={() => handleDeleteClick(user)}
+                                                        >
+                                                            Delete User
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="text-center">No users found.</TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
                 </CardContent>
             </Card>
+
+            {userToEdit && (
+                <EditUserDialog
+                    isOpen={isEditUserDialogOpen}
+                    onOpenChange={setIsEditUserDialogOpen}
+                    user={userToEdit}
+                    onUserUpdated={() => {
+                        setIsEditUserDialogOpen(false);
+                        loadUsers();
+                    }}
+                />
+            )}
+
             <DeleteConfirmationDialog
                 isOpen={isDeleteAlertOpen}
                 onOpenChange={setIsDeleteAlertOpen}
