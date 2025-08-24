@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { MoreHorizontal, FileText, Trash2, Search } from 'lucide-react';
+import { MoreHorizontal, FileText, Trash2, Search, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -18,6 +18,10 @@ import { useAuth } from '@/hooks/use-auth';
 import { DeleteConfirmationDialog } from '@/components/admin/delete-confirmation-dialog';
 import Link from 'next/link';
 
+type SortKey = keyof Document;
+type SortDirection = 'asc' | 'desc';
+
+
 export default function DocumentManagementPage() {
     const { isAdmin } = useAuth();
     const [documents, setDocuments] = useState<Document[]>([]);
@@ -26,6 +30,8 @@ export default function DocumentManagementPage() {
     const [selectedDocs, setSelectedDocs] = useState<string[]>([]);
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [sortKey, setSortKey] = useState<SortKey>('createdAt');
+    const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
     const { toast } = useToast();
 
     const loadDocuments = async () => {
@@ -45,16 +51,47 @@ export default function DocumentManagementPage() {
         loadDocuments();
     }, []);
 
-    const filteredDocuments = useMemo(() => {
-        return documents.filter(doc =>
-            doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            doc.userEmail.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-    }, [documents, searchTerm]);
+    const sortedAndFilteredDocuments = useMemo(() => {
+        return documents
+            .filter(doc =>
+                doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                doc.userEmail.toLowerCase().includes(searchTerm.toLowerCase())
+            )
+            .sort((a, b) => {
+                const aValue = a[sortKey];
+                const bValue = b[sortKey];
+
+                if (aValue < bValue) {
+                    return sortDirection === 'asc' ? -1 : 1;
+                }
+                if (aValue > bValue) {
+                    return sortDirection === 'asc' ? 1 : -1;
+                }
+                return 0;
+            });
+    }, [documents, searchTerm, sortKey, sortDirection]);
+
+    const handleSort = (key: SortKey) => {
+        if (sortKey === key) {
+            setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortKey(key);
+            setSortDirection('asc');
+        }
+    };
+    
+    const renderSortIcon = (key: SortKey) => {
+        if (sortKey !== key) {
+            return <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />;
+        }
+        return sortDirection === 'asc' ? 
+            <ArrowUpDown className="ml-2 h-4 w-4" /> : 
+            <ArrowUpDown className="ml-2 h-4 w-4" />;
+    }
 
     const handleSelectAll = (checked: boolean | 'indeterminate') => {
         if (checked === true) {
-            setSelectedDocs(filteredDocuments.map(doc => doc.id));
+            setSelectedDocs(sortedAndFilteredDocuments.map(doc => doc.id));
         } else {
             setSelectedDocs([]);
         }
@@ -82,8 +119,8 @@ export default function DocumentManagementPage() {
     const handleBulkDeleteClick = () => {
         if (!isAdmin() || selectedDocs.length === 0) {
              toast({
-                title: 'Permission Denied',
-                description: 'Only an Admin can perform this action.',
+                title: 'Permission Denied or No Selection',
+                description: 'Only an Admin can perform this action and at least one document must be selected.',
                 variant: 'destructive',
             });
             return;
@@ -171,14 +208,26 @@ export default function DocumentManagementPage() {
                                 <TableRow>
                                     <TableHead className="w-[50px]">
                                         <Checkbox
-                                            checked={selectedDocs.length > 0 && selectedDocs.length === filteredDocuments.length}
+                                            checked={selectedDocs.length > 0 && selectedDocs.length === sortedAndFilteredDocuments.length && sortedAndFilteredDocuments.length > 0}
                                             onCheckedChange={handleSelectAll}
                                             aria-label="Select all"
                                         />
                                     </TableHead>
-                                    <TableHead>File Name</TableHead>
-                                    <TableHead>Owner</TableHead>
-                                    <TableHead>Uploaded Date</TableHead>
+                                    <TableHead>
+                                        <Button variant="ghost" onClick={() => handleSort('name')} className="px-0">
+                                            File Name {renderSortIcon('name')}
+                                        </Button>
+                                    </TableHead>
+                                    <TableHead>
+                                        <Button variant="ghost" onClick={() => handleSort('userEmail')} className="px-0">
+                                            Owner {renderSortIcon('userEmail')}
+                                        </Button>
+                                    </TableHead>
+                                    <TableHead>
+                                        <Button variant="ghost" onClick={() => handleSort('createdAt')} className="px-0">
+                                            Uploaded Date {renderSortIcon('createdAt')}
+                                        </Button>
+                                    </TableHead>
                                     <TableHead className="w-[100px] text-center">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -193,8 +242,8 @@ export default function DocumentManagementPage() {
                                             <TableCell><Skeleton className="h-8 w-8" /></TableCell>
                                         </TableRow>
                                     ))
-                                ) : filteredDocuments.length > 0 ? (
-                                    filteredDocuments.map((doc) => (
+                                ) : sortedAndFilteredDocuments.length > 0 ? (
+                                    sortedAndFilteredDocuments.map((doc) => (
                                         <TableRow key={doc.id} data-state={selectedDocs.includes(doc.id) ? 'selected' : ''}>
                                              <TableCell>
                                                 <Checkbox

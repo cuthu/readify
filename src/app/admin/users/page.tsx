@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { MoreHorizontal, Search } from 'lucide-react';
+import { MoreHorizontal, Search, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -18,6 +18,9 @@ import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/use-auth';
 import { EditUserDialog } from '@/components/admin/users/edit-user-dialog';
 
+type SortKey = keyof User | 'createdAt';
+type SortDirection = 'asc' | 'desc';
+
 export default function UserManagementPage() {
     const { user: currentUser, isAdmin } = useAuth();
     const [users, setUsers] = useState<User[]>([]);
@@ -27,6 +30,8 @@ export default function UserManagementPage() {
     const [isEditUserDialogOpen, setIsEditUserDialogOpen] = useState(false);
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [sortKey, setSortKey] = useState<SortKey>('createdAt');
+    const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
     const { toast } = useToast();
 
     const handleActionWithoutPermission = () => {
@@ -53,12 +58,43 @@ export default function UserManagementPage() {
     useEffect(() => {
         loadUsers();
     }, []);
+
+    const sortedAndFilteredUsers = useMemo(() => {
+        return users
+            .filter(user =>
+                user.email.toLowerCase().includes(searchTerm.toLowerCase())
+            )
+            .sort((a, b) => {
+                const aValue = a[sortKey];
+                const bValue = b[sortKey];
+                
+                if (aValue < bValue) {
+                    return sortDirection === 'asc' ? -1 : 1;
+                }
+                if (aValue > bValue) {
+                    return sortDirection === 'asc' ? 1 : -1;
+                }
+                return 0;
+            });
+    }, [users, searchTerm, sortKey, sortDirection]);
     
-    const filteredUsers = useMemo(() => {
-        return users.filter(user =>
-            user.email.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-    }, [users, searchTerm]);
+    const handleSort = (key: SortKey) => {
+        if (sortKey === key) {
+            setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortKey(key);
+            setSortDirection('asc');
+        }
+    };
+
+    const renderSortIcon = (key: SortKey) => {
+        if (sortKey !== key) {
+            return <ArrowUpDown className="ml-2 h-4 w-4 opacity-30" />;
+        }
+        return sortDirection === 'asc' ? 
+            <ArrowUpDown className="ml-2 h-4 w-4" /> : 
+            <ArrowUpDown className="ml-2 h-4 w-4" />;
+    }
 
     const handleEditClick = (user: User) => {
         if (!isAdmin()) {
@@ -136,9 +172,21 @@ export default function UserManagementPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Email</TableHead>
-                                    <TableHead>Role</TableHead>
-                                    <TableHead>Signed Up</TableHead>
+                                    <TableHead>
+                                        <Button variant="ghost" onClick={() => handleSort('email')} className="px-0">
+                                            Email {renderSortIcon('email')}
+                                        </Button>
+                                    </TableHead>
+                                    <TableHead>
+                                        <Button variant="ghost" onClick={() => handleSort('role')} className="px-0">
+                                            Role {renderSortIcon('role')}
+                                        </Button>
+                                    </TableHead>
+                                    <TableHead>
+                                        <Button variant="ghost" onClick={() => handleSort('createdAt')} className="px-0">
+                                            Signed Up {renderSortIcon('createdAt')}
+                                        </Button>
+                                    </TableHead>
                                     <TableHead className="w-[100px] text-center">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -152,8 +200,8 @@ export default function UserManagementPage() {
                                             <TableCell><Skeleton className="h-8 w-8" /></TableCell>
                                         </TableRow>
                                     ))
-                                ) : filteredUsers.length > 0 ? (
-                                    filteredUsers.map((user) => (
+                                ) : sortedAndFilteredUsers.length > 0 ? (
+                                    sortedAndFilteredUsers.map((user) => (
                                         <TableRow key={user.id}>
                                             <TableCell>{user.email}</TableCell>
                                             <TableCell>{user.role}</TableCell>

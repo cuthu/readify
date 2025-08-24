@@ -29,4 +29,5 @@ export {
     User,
     Palette,
     Search,
+    ArrowUpDown,
 } from 'lucide-react';
