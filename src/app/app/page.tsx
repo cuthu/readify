@@ -8,17 +8,15 @@ import { SummarizeDialog } from '@/components/app/main/summarize-dialog';
 import { LearnDialog } from '@/components/app/main/learn-dialog';
 import { TtsTab } from '@/components/app/main/tts-tab';
 import { UploadTab } from '@/components/app/main/upload-tab';
-import { addDocument, Document } from '@/ai/flows/document-management';
+import { addDocument } from '@/ai/flows/document-management';
+import { Document } from '@/types/document';
 import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app/sidebar-content';
 import * as pdfjs from 'pdfjs-dist';
 
 // Set up the worker for pdfjs-dist
 if (typeof window !== 'undefined') {
-  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-    'pdf.worker.min.mjs',
-    import.meta.url,
-  ).toString();
+  pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
 }
 
 

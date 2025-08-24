@@ -31,7 +31,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Document, getDocuments, deleteDocument } from '@/ai/flows/document-management';
+import { getDocuments, deleteDocument } from '@/ai/flows/document-management';
+import { Document } from '@/types/document';
 import { useToast } from '@/hooks/use-toast';
 import { audioConversion } from '@/ai/flows/audio-conversion';
 import Link from 'next/link';
@@ -294,9 +295,10 @@ export function SidebarNavigation({
         </SidebarMenuItem>
       </SidebarGroup>
        <SidebarMenuItem>
-        <Link href="/admin" legacyBehavior>
-          <SidebarMenuButton>
-            <LayoutDashboard />
+ {/* Use asChild to pass props and ref to the SidebarMenuButton's underlying element */}
+        <Link href="/admin" passHref>
+ <SidebarMenuButton asChild >
+ <LayoutDashboard />
             Admin Dashboard
           </SidebarMenuButton>
         </Link>
