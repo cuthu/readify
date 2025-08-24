@@ -111,12 +111,14 @@ export default function SettingsPage() {
 
   return (
     <div className="p-4 sm:p-6 md:p-8">
-       <div className="mb-6 relative">
-         <Link href="/app" className="absolute -top-1 left-0 flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
-            <ArrowLeft className="h-4 w-4" />
-            Back to app
-        </Link>
-        <div className="pt-8 text-center sm:text-left sm:pt-0">
+       <div className="mb-6">
+         <Button asChild variant="ghost" className="pl-0 mb-4 text-muted-foreground hover:text-foreground">
+            <Link href="/app" className="flex items-center gap-2 text-sm">
+                <ArrowLeft className="h-4 w-4" />
+                Back to app
+            </Link>
+        </Button>
+        <div className="text-left">
             <h1 className="text-3xl font-bold font-headline">Settings</h1>
             <p className="text-muted-foreground">Manage your account and preferences.</p>
         </div>
@@ -281,5 +283,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-    
