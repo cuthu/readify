@@ -21,10 +21,13 @@ import {
   LayoutDashboard,
 } from 'lucide-react';
 import { useState } from 'react';
+import { Slider } from '@/components/ui/slider';
+import { Label } from '@/components/ui/label';
 
 export function SidebarNavigation() {
   const [aiToolsOpen, setAiToolsOpen] = useState(false);
   const [myDocsOpen, setMyDocsOpen] = useState(true); // Default to open for visibility
+  const [speakingRate, setSpeakingRate] = useState(1.0);
 
   return (
     <SidebarMenu>
@@ -41,10 +44,23 @@ export function SidebarNavigation() {
         </SidebarMenuButton>
       </SidebarMenuItem>
       <SidebarMenuItem>
-        <SidebarMenuButton>
-          <Gauge />
-          Speaking Rate
-        </SidebarMenuButton>
+        <div className="flex flex-col gap-2 px-2 pt-2">
+            <div className='flex items-center justify-between'>
+                 <Label htmlFor="speaking-rate" className="flex items-center gap-2 text-sm font-medium">
+                    <Gauge className="h-4 w-4" />
+                    Speaking Rate
+                </Label>
+                <span className="text-xs text-muted-foreground font-mono">{speakingRate.toFixed(1)}x</span>
+            </div>
+          <Slider
+            id="speaking-rate"
+            min={0.5}
+            max={2}
+            step={0.1}
+            defaultValue={[1]}
+            onValueChange={(value) => setSpeakingRate(value[0])}
+          />
+        </div>
       </SidebarMenuItem>
 
       <SidebarGroup>
