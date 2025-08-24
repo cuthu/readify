@@ -27,7 +27,8 @@ export async function getDocuments(): Promise<Document[]> {
   if (!documentMap) {
     return [];
   }
-  return Object.values(documentMap);
+  // Sort by createdAt date in descending order
+  return Object.values(documentMap).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 /**
@@ -62,4 +63,25 @@ export async function deleteDocument(id:string): Promise<void> {
     delete documentMap[id];
     await redis.set(DOCUMENTS_KEY, documentMap);
   }
+}
+
+/**
+ * Deletes multiple documents by their IDs.
+ * @param ids - The array of document IDs to delete.
+ * @returns A promise that resolves when the documents are deleted.
+ */
+export async function deleteDocuments(ids: string[]): Promise<void> {
+    const documentMap = await redis.get<Record<string, Document>>(DOCUMENTS_KEY);
+    if (documentMap) {
+        let changed = false;
+        ids.forEach(id => {
+            if (documentMap[id]) {
+                delete documentMap[id];
+                changed = true;
+            }
+        });
+        if (changed) {
+            await redis.set(DOCUMENTS_KEY, documentMap);
+        }
+    }
 }

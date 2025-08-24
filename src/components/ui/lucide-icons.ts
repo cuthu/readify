@@ -28,4 +28,5 @@ export {
     LogOut,
     User,
     Palette,
+    Search,
 } from 'lucide-react';

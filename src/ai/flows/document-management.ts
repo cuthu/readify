@@ -13,6 +13,7 @@ import {
   getDocuments as getDocumentsFromService,
   addDocument as addDocumentToService,
   deleteDocument as deleteDocumentFromService,
+  deleteDocuments as deleteDocumentsFromService,
 } from '@/services/document-service';
 import { put } from '@vercel/blob';
 import * as pdfjs from 'pdfjs-dist';
@@ -117,13 +118,12 @@ export async function getDocuments(): Promise<Document[]> {
   return getDocumentsFlow();
 }
 
-// This is now an internal function, the main client-facing add is processAndSaveDocument
-async function addDocument(doc: Omit<Document, 'id' | 'createdAt'>): Promise<Document> {
-  return addDocumentFlow(doc);
-}
-
 export async function deleteDocument(id: string): Promise<{ success: boolean }> {
   return deleteDocumentFlow(id);
+}
+
+export async function deleteDocuments(ids: string[]): Promise<{ success: boolean }> {
+    return deleteDocumentsFlow(ids);
 }
 
 
@@ -138,17 +138,6 @@ const getDocumentsFlow = ai.defineFlow(
   }
 );
 
-const addDocumentFlow = ai.defineFlow(
-  {
-    name: 'addDocumentFlow',
-    inputSchema: DocumentSchema.omit({ id: true, createdAt: true }),
-    outputSchema: DocumentSchema,
-  },
-  async (doc) => {
-    return addDocumentToService(doc);
-  }
-);
-
 const deleteDocumentFlow = ai.defineFlow(
   {
     name: 'deleteDocumentFlow',
@@ -156,7 +145,19 @@ const deleteDocumentFlow = ai.defineFlow(
     outputSchema: z.object({ success: z.boolean() }),
   },
   async (id) => {
-    deleteDocumentFromService(id);
+    await deleteDocumentFromService(id);
     return { success: true };
   }
 );
+
+const deleteDocumentsFlow = ai.defineFlow(
+    {
+      name: 'deleteDocumentsFlow',
+      inputSchema: z.array(z.string()),
+      outputSchema: z.object({ success: z.boolean() }),
+    },
+    async (ids) => {
+      await deleteDocumentsFromService(ids);
+      return { success: true };
+    }
+  );
