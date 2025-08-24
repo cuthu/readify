@@ -59,8 +59,10 @@ export default function App() {
 
           try {
             if (file.type === 'text/plain') {
-              content = fileDataUri;
+              // For text files, the content is read directly as text.
+              content = await file.text();
             } else if (file.type === 'application/pdf') {
+              // For PDF files, we use the server action to extract text.
               content = await extractTextFromPdf(fileDataUri);
             } else {
                toast({
@@ -87,13 +89,14 @@ export default function App() {
             setIsProcessingFile(false);
           }
       };
-
-      if (file.type === 'text/plain') {
-        reader.readAsText(file);
-      } else { // For PDF
+      
+      // Read the file as a data URL for both types, as the server action needs it.
+      // For text files, we also read it as text for direct use.
+      if (file.type === 'application/pdf') {
         reader.readAsDataURL(file);
+      } else {
+        reader.readAsText(file);
       }
-
 
     } else {
       toast({
