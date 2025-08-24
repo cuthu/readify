@@ -1,11 +1,22 @@
+
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export function LoginForm() {
+    const router = useRouter();
+
+    const handleLogin = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.preventDefault();
+        // In a real application, you would perform authentication here.
+        // For now, we'll just redirect to the main app page.
+        router.push('/app');
+    };
+
     return (
         <Card className="shadow-xl">
             <CardHeader className="space-y-1 text-center">
@@ -23,7 +34,7 @@ export function LoginForm() {
                 </div>
             </CardContent>
             <CardFooter>
-                <Button className="w-full">Log In</Button>
+                <Button className="w-full" onClick={handleLogin}>Log In</Button>
             </CardFooter>
         </Card>
     );
