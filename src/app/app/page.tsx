@@ -1,25 +1,17 @@
-import { SidebarProvider, Sidebar, SidebarInset, SidebarHeader, SidebarTrigger, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
+import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, FileText } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { AppSidebar } from '@/components/app/sidebar-content';
 
 export default function App() {
   return (
     <div className="dark bg-background text-foreground min-h-screen">
       <SidebarProvider>
         <Sidebar>
-          <SidebarHeader>
-            <div className="flex items-center gap-2">
-              <SidebarTrigger />
-              <span className="font-headline text-lg">Readify</span>
-            </div>
-          </SidebarHeader>
-          <SidebarContent>
-            {/* Placeholder for future sidebar items */}
-          </SidebarContent>
+          <AppSidebar />
         </Sidebar>
         <SidebarInset>
           <main className="p-4">
