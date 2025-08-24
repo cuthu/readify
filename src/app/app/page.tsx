@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Upload, FileText, Loader2, Mic, Volume2, Send, MessageSquare, List, Book, FileQuestion } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -53,6 +53,9 @@ export default function App() {
   const [chatQuery, setChatQuery] = useState('');
   const [chatAnswer, setChatAnswer] = useState('');
 
+  // State for voice preview
+  const [isPreviewingVoice, setIsPreviewingVoice] = useState<string | null>(null);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const handleGenerateAudio = async () => {
     setIsGeneratingAudio(true);
@@ -140,10 +143,27 @@ export default function App() {
     }
   };
   
-  const handlePreviewVoice = (e: React.MouseEvent, voice: string) => {
+  const handlePreviewVoice = async (e: React.MouseEvent, voice: string) => {
     e.stopPropagation();
-    // Placeholder for voice preview functionality
-    alert(`Previewing voice: ${voice}`);
+    if (isPreviewingVoice) return;
+    
+    setIsPreviewingVoice(voice);
+    try {
+        const result = await audioConversion({ text: "Hello, this is a preview of the selected voice.", voiceName: voice });
+        if (previewAudioRef.current) {
+            previewAudioRef.current.src = result.audioDataUri;
+            previewAudioRef.current.play();
+        }
+    } catch (error) {
+        console.error('Error generating voice preview:', error);
+        toast({
+            title: 'Preview Error',
+            description: 'Could not generate voice preview.',
+            variant: 'destructive',
+        });
+    } finally {
+        setIsPreviewingVoice(null);
+    }
   };
 
   const handleGenerateSummary = async () => {
@@ -213,6 +233,7 @@ export default function App() {
 
   return (
     <div className="p-4 flex flex-col gap-4">
+        <audio ref={previewAudioRef} />
         {/* AI Tool Dialogs */}
         <Dialog>
             <DialogTrigger asChild id="summarize-dialog-trigger" className="hidden"></DialogTrigger>
@@ -377,7 +398,7 @@ export default function App() {
                     <CardContent className="space-y-4">
                     <div className="grid gap-2">
                         <Label htmlFor="voice-select">Voice</Label>
-                        <Select value={selectedVoice} onValuechange={setSelectedVoice}>
+                        <Select value={selectedVoice} onValueChange={setSelectedVoice}>
                             <SelectTrigger id="voice-select" className="w-full">
                                 <SelectValue placeholder="Select a voice" />
                             </SelectTrigger>
@@ -389,7 +410,14 @@ export default function App() {
                                             <SelectItem key={voice} value={voice}>
                                                 <div className="flex items-center justify-between w-full">
                                                     <span>{voice.charAt(0).toUpperCase() + voice.slice(1)}</span>
-                                                    <Volume2 className="ml-4 h-4 w-4 text-muted-foreground hover:text-foreground" onClick={(e) => handlePreviewVoice(e, voice)} />
+                                                    {isPreviewingVoice === voice ? (
+                                                        <Loader2 className="ml-4 h-4 w-4 animate-spin" />
+                                                    ) : (
+                                                        <Volume2 
+                                                            className="ml-4 h-4 w-4 text-muted-foreground hover:text-foreground cursor-pointer" 
+                                                            onClick={(e) => handlePreviewVoice(e, voice)} 
+                                                        />
+                                                    )}
                                                 </div>
                                             </SelectItem>
                                         ))}
@@ -422,5 +450,4 @@ export default function App() {
         </Tabs>
     </div>
   );
-
-    
+}
