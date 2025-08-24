@@ -11,7 +11,16 @@ import { UploadTab } from '@/components/app/main/upload-tab';
 import { addDocument, Document } from '@/ai/flows/document-management';
 import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app/sidebar-content';
-import { extractTextFromPdf } from '../actions';
+import * as pdfjs from 'pdfjs-dist';
+
+// Set up the worker for pdfjs-dist
+if (typeof window !== 'undefined') {
+  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+    'pdf.worker.min.mjs',
+    import.meta.url,
+  ).toString();
+}
+
 
 export default function App() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -43,61 +52,56 @@ export default function App() {
     }
   }
 
+  const extractTextFromPdf = async (file: File): Promise<string> => {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjs.getDocument(arrayBuffer).promise;
+    let text = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        text += content.items.map((item: any) => item.str).join(' ');
+    }
+    return text;
+  };
 
-  const handleFileChange = (file: File | null) => {
+
+  const handleFileChange = async (file: File | null) => {
     if (file && (file.type === 'application/pdf' || file.type === 'text/plain')) {
       setUploadedFile(file);
       setDocumentContent('');
       
-      const reader = new FileReader();
+      let content = '';
+      setIsProcessingFile(true);
 
-      reader.onload = async (event) => {
-          const fileDataUri = event.target?.result as string;
-          let content = '';
-
-          setIsProcessingFile(true);
-
-          try {
-            if (file.type === 'text/plain') {
-              // For text files, the content is read directly as text.
-              content = await file.text();
-            } else if (file.type === 'application/pdf') {
-              // For PDF files, we use the server action to extract text.
-              content = await extractTextFromPdf(fileDataUri);
-            } else {
-               toast({
-                  title: 'Unsupported File Type',
-                  description: 'Currently, only .txt and .pdf files can be processed.',
-                  variant: 'destructive'
-              });
-              setIsProcessingFile(false);
-              return;
-            }
-
-            setDocumentContent(content);
-            const saved = await saveDocument(file.name, content);
-            if (saved) {
-              setActiveTab('tts'); // Switch to TTS tab after successful upload
-            }
-          } catch(e: any) {
-             toast({
-                title: 'Error Processing File',
-                description: e.message || 'There was a problem reading the content of your file.',
-                variant: 'destructive'
-              });
-          } finally {
+      try {
+        if (file.type === 'text/plain') {
+          content = await file.text();
+        } else if (file.type === 'application/pdf') {
+          content = await extractTextFromPdf(file);
+        } else {
+            toast({
+              title: 'Unsupported File Type',
+              description: 'Currently, only .txt and .pdf files can be processed.',
+              variant: 'destructive'
+            });
             setIsProcessingFile(false);
-          }
-      };
-      
-      // Read the file as a data URL for both types, as the server action needs it.
-      // For text files, we also read it as text for direct use.
-      if (file.type === 'application/pdf') {
-        reader.readAsDataURL(file);
-      } else {
-        reader.readAsText(file);
-      }
+            return;
+        }
 
+        setDocumentContent(content);
+        const saved = await saveDocument(file.name, content);
+        if (saved) {
+          setActiveTab('tts'); // Switch to TTS tab after successful upload
+        }
+      } catch(e: any) {
+          toast({
+            title: 'Error Processing File',
+            description: e.message || 'There was a problem reading the content of your file.',
+            variant: 'destructive'
+          });
+      } finally {
+        setIsProcessingFile(false);
+      }
     } else {
       toast({
         title: 'Invalid File Type',
