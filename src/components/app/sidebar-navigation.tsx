@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -35,8 +36,13 @@ const voices = {
   "Amazon": ["ivy", "joanna", "kendr"],
 };
 
+const openDialog = (id: string) => {
+    document.getElementById(id)?.click();
+}
+
+
 export function SidebarNavigation() {
-  const [aiToolsOpen, setAiToolsOpen] = useState(false);
+  const [aiToolsOpen, setAiToolsOpen] = useState(true);
   const [myDocsOpen, setMyDocsOpen] = useState(true); // Default to open for visibility
   const [speakingRate, setSpeakingRate] = useState(1.0);
   const [selectedVoice, setSelectedVoice] = useState('alloy');
@@ -119,25 +125,25 @@ export function SidebarNavigation() {
           {aiToolsOpen && (
             <SidebarMenuSub>
               <SidebarMenuSubItem>
-                  <SidebarMenuSubButton href="/app/learn">
+                  <SidebarMenuSubButton onClick={() => openDialog('learn-dialog-trigger')}>
                       <MessageSquare className="mr-2 h-4 w-4" />
                       <span>Chat with Document</span>
                   </SidebarMenuSubButton>
               </SidebarMenuSubItem>
               <SidebarMenuSubItem>
-                  <SidebarMenuSubButton href="/app/summarize">
+                  <SidebarMenuSubButton onClick={() => openDialog('summarize-dialog-trigger')}>
                       <List className="mr-2 h-4 w-4" />
                       <span>Summarize & Key Points</span>
                   </SidebarMenuSubButton>
               </SidebarMenuSubItem>
               <SidebarMenuSubItem>
-                  <SidebarMenuSubButton href="/app/summarize">
+                  <SidebarMenuSubButton onClick={() => openDialog('summarize-dialog-trigger')}>
                       <Book className="mr-2 h-4 w-4" />
                       <span>Create Glossary</span>
                   </SidebarMenuSubButton>
               </SidebarMenuSubItem>
               <SidebarMenuSubItem>
-                  <SidebarMenuSubButton href="/app/learn">
+                  <SidebarMenuSubButton onClick={() => openDialog('learn-dialog-trigger')}>
                       <FileQuestion className="mr-2 h-4 w-4" />
                       <span>Generate Quiz</span>
                   </SidebarMenuSubButton>
