@@ -14,9 +14,9 @@ import {
   addDocument as addDocumentToService,
   deleteDocument as deleteDocumentFromService,
 } from '@/services/document-service';
-import { put, head as vercelHead } from '@vercel/blob';
+import { put } from '@vercel/blob';
 import * as pdfjs from 'pdfjs-dist';
-import docx from 'docx-preview'; // Using for server-side buffer reading
+import * as docx from 'docx-preview'; // Using for server-side buffer reading
 
 // Server Action for file upload to Vercel Blob
 export async function uploadDocument(formData: FormData): Promise<{ url?: string; error?: string }> {
