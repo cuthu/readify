@@ -34,6 +34,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Document, getDocuments, deleteDocument } from '@/ai/flows/document-management';
 import { useToast } from '@/hooks/use-toast';
 import { audioConversion } from '@/ai/flows/audio-conversion';
+import Link from 'next/link';
 
 const voices = {
   "OpenAI": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
@@ -293,10 +294,12 @@ export function SidebarNavigation({
         </SidebarMenuItem>
       </SidebarGroup>
        <SidebarMenuItem>
-        <SidebarMenuButton>
-          <LayoutDashboard />
-          Admin Dashboard
-        </SidebarMenuButton>
+        <Link href="/admin" legacyBehavior>
+          <SidebarMenuButton>
+            <LayoutDashboard />
+            Admin Dashboard
+          </SidebarMenuButton>
+        </Link>
       </SidebarMenuItem>
     </SidebarMenu>
   );
