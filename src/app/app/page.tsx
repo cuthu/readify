@@ -12,8 +12,10 @@ import { uploadDocument, processAndSaveDocument } from '@/ai/flows/document-mana
 import { Document } from '@/types/document';
 import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app/sidebar-content';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function App() {
+  const { user } = useAuth();
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [documentContent, setDocumentContent] = useState('');
   const [isDragging, setIsDragging] = useState(false);
@@ -25,6 +27,10 @@ export default function App() {
   
   const handleFileChange = async (file: File | null) => {
     if (!file) return;
+    if (!user) {
+        toast({ title: 'Authentication Error', description: 'You must be logged in to upload files.', variant: 'destructive' });
+        return;
+    }
 
     if (!file.type.startsWith('text/plain') && !file.type.startsWith('application/pdf') && !file.name.endsWith('.docx')) {
        toast({
@@ -55,7 +61,12 @@ export default function App() {
       });
 
       // Step 2: Trigger the backend flow to process the file
-      const savedDoc = await processAndSaveDocument({ fileName: file.name, url });
+      const savedDoc = await processAndSaveDocument({ 
+        fileName: file.name, 
+        url,
+        userId: user.id,
+        userEmail: user.email,
+      });
 
       // Step 3: Update the UI with the processed content
       setDocumentContent(savedDoc.content);

@@ -24,5 +24,8 @@ export {
     FileQuestion,
     Send,
     MoreHorizontal,
-    PlusCircle
+    PlusCircle,
+    LogOut,
+    User,
+    Palette,
 } from 'lucide-react';

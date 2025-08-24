@@ -5,14 +5,7 @@
 
 import { Redis } from "@upstash/redis";
 import { randomUUID } from "crypto";
-
-// Define the Document type
-export interface Document {
-  id: string;
-  name: string;
-  content: string;
-  url: string;
-}
+import { Document } from "@/types/document";
 
 // Initialize the Upstash Redis client
 // This will automatically use the UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN
@@ -42,9 +35,13 @@ export async function getDocuments(): Promise<Document[]> {
  * @param doc - The document to add, without an ID.
  * @returns A promise that resolves to the newly created document with an ID.
  */
-export async function addDocument(doc: Omit<Document, 'id'>): Promise<Document> {
+export async function addDocument(doc: Omit<Document, 'id' | 'createdAt'>): Promise<Document> {
   const newId = randomUUID();
-  const newDoc: Document = { ...doc, id: newId };
+  const newDoc: Document = { 
+    ...doc, 
+    id: newId,
+    createdAt: new Date().toISOString(),
+  };
   
   // Fetch the current documents map, add the new one, and set it back
   const documentMap = await redis.get<Record<string, Document>>(DOCUMENTS_KEY) || {};

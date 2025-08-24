@@ -80,6 +80,8 @@ const extractTextFromServer = async (url: string, fileName: string): Promise<str
 const ProcessDocumentInputSchema = z.object({
   fileName: z.string(),
   url: z.string(),
+  userId: z.string(),
+  userEmail: z.string().email(),
 });
 
 export async function processAndSaveDocument(input: z.infer<typeof ProcessDocumentInputSchema>): Promise<Document> {
@@ -92,7 +94,7 @@ const processDocumentFlow = ai.defineFlow(
     inputSchema: ProcessDocumentInputSchema,
     outputSchema: DocumentSchema,
   },
-  async ({ fileName, url }) => {
+  async ({ fileName, url, userId, userEmail }) => {
     // 1. Extract text from the document on the server
     const content = await extractTextFromServer(url, fileName);
 
@@ -101,6 +103,8 @@ const processDocumentFlow = ai.defineFlow(
         name: fileName,
         content: content,
         url: url,
+        userId,
+        userEmail,
     });
     
     return newDoc;
@@ -114,7 +118,7 @@ export async function getDocuments(): Promise<Document[]> {
 }
 
 // This is now an internal function, the main client-facing add is processAndSaveDocument
-async function addDocument(doc: Omit<Document, 'id'>): Promise<Document> {
+async function addDocument(doc: Omit<Document, 'id' | 'createdAt'>): Promise<Document> {
   return addDocumentFlow(doc);
 }
 
@@ -137,7 +141,7 @@ const getDocumentsFlow = ai.defineFlow(
 const addDocumentFlow = ai.defineFlow(
   {
     name: 'addDocumentFlow',
-    inputSchema: DocumentSchema.omit({ id: true }),
+    inputSchema: DocumentSchema.omit({ id: true, createdAt: true }),
     outputSchema: DocumentSchema,
   },
   async (doc) => {

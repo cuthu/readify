@@ -6,6 +6,9 @@ import { SidebarContent, SidebarHeader, SidebarTrigger } from '@/components/ui/s
 import { SidebarNavigation } from './sidebar-navigation';
 import { SidebarUser } from './sidebar-user';
 import { Separator } from '../ui/separator';
+import { Button } from '../ui/button';
+import { LogOut } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
 
 interface AppSidebarProps {
   onDocumentSelect: (doc: Document) => void;
@@ -23,6 +26,8 @@ export function AppSidebar({
     selectedVoice,
     speakingRate,
 }: AppSidebarProps) {
+  const { logout } = useAuth();
+
   return (
     <>
       <SidebarHeader>
@@ -45,6 +50,12 @@ export function AppSidebar({
           <div>
             <Separator className="my-2" />
             <SidebarUser />
+            <div className="px-2">
+                <Button variant="ghost" className="w-full justify-start gap-2" onClick={logout}>
+                    <LogOut className="h-4 w-4" />
+                    <span>Log Out</span>
+                </Button>
+            </div>
           </div>
         </div>
       </SidebarContent>

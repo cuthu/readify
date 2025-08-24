@@ -13,10 +13,9 @@ export function AdminNav() {
     if (pathname.startsWith('/admin/users')) {
       return 'users';
     }
-    // A future implementation might have a documents tab
-    // if (pathname.startsWith('/admin/documents')) {
-    //   return 'documents';
-    // }
+    if (pathname.startsWith('/admin/documents')) {
+      return 'documents';
+    }
     return 'dashboard';
   };
 
@@ -31,7 +30,9 @@ export function AdminNav() {
         <Link href="/admin/users" passHref>
           <TabsTrigger value="users">User Management</TabsTrigger>
         </Link>
-        <TabsTrigger value="documents" disabled>Document Management</TabsTrigger>
+        <Link href="/admin/documents" passHref>
+            <TabsTrigger value="documents">Document Management</TabsTrigger>
+        </Link>
       </TabsList>
     </Tabs>
   );
