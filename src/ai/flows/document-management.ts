@@ -17,7 +17,6 @@ import {
 } from '@/services/document-service';
 import { put } from '@vercel/blob';
 import * as pdfjs from 'pdfjs-dist';
-import * as docx from 'docx-preview'; // Using for server-side buffer reading
 
 // Server Action for file upload to Vercel Blob
 export async function uploadDocument(formData: FormData): Promise<{ url?: string; error?: string }> {
@@ -57,18 +56,10 @@ const extractTextFromServer = async (url: string, fileName: string): Promise<str
         }
         return text;
     } else if (fileName.endsWith('.docx')) {
-        // docx-preview can work with ArrayBuffer on the server
-        const text = await new Promise<string>((resolve, reject) => {
-            docx.renderAsync(arrayBuffer, undefined, undefined, { breakPages: false })
-                .then((result: any) => {
-                     // The library renders to HTML, we need to extract text from it.
-                     // A simple regex approach for server-side.
-                     const textContent = result.innerHTML.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-                     resolve(textContent);
-                })
-                .catch(reject);
-        });
-        return text;
+        // docx-preview cannot be used on the server as it requires the `document` object.
+        // Returning an empty string to prevent a crash.
+        console.warn("Server-side text extraction for .docx is not supported. Content will be empty.");
+        return '';
     } else if (fileName.endsWith('.txt')) {
         return Buffer.from(arrayBuffer).toString('utf-8');
     }
