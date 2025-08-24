@@ -9,9 +9,9 @@ import { LearnDialog } from '@/components/app/main/learn-dialog';
 import { TtsTab } from '@/components/app/main/tts-tab';
 import { UploadTab } from '@/components/app/main/upload-tab';
 import { addDocument, Document } from '@/ai/flows/document-management';
-import { processFile } from '@/ai/flows/process-file';
 import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app/sidebar-content';
+import { extractTextFromPdf } from '../actions';
 
 export default function App() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -45,24 +45,23 @@ export default function App() {
 
 
   const handleFileChange = (file: File | null) => {
-    if (file && (file.type === 'application/pdf' || file.type.includes('document') || file.type === 'text/plain')) {
+    if (file && (file.type === 'application/pdf' || file.type === 'text/plain')) {
       setUploadedFile(file);
       setDocumentContent('');
       
       const reader = new FileReader();
 
       reader.onload = async (event) => {
-          const fileData = event.target?.result as string;
+          const fileDataUri = event.target?.result as string;
           let content = '';
 
           setIsProcessingFile(true);
 
           try {
             if (file.type === 'text/plain') {
-              content = fileData;
+              content = fileDataUri;
             } else if (file.type === 'application/pdf') {
-              const result = await processFile({ fileDataUri: fileData });
-              content = result.textContent;
+              content = await extractTextFromPdf(fileDataUri);
             } else {
                toast({
                   title: 'Unsupported File Type',
@@ -78,10 +77,10 @@ export default function App() {
             if (saved) {
               setActiveTab('tts'); // Switch to TTS tab after successful upload
             }
-          } catch(e) {
+          } catch(e: any) {
              toast({
                 title: 'Error Processing File',
-                description: 'There was a problem reading the content of your file.',
+                description: e.message || 'There was a problem reading the content of your file.',
                 variant: 'destructive'
               });
           } finally {
@@ -91,7 +90,7 @@ export default function App() {
 
       if (file.type === 'text/plain') {
         reader.readAsText(file);
-      } else {
+      } else { // For PDF
         reader.readAsDataURL(file);
       }
 
