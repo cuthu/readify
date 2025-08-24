@@ -22,6 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { addUser } from '@/ai/flows/user-management';
 import { CreateUserSchema, UserRoleSchema } from '@/types/user';
 import { Loader2, PlusCircle } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
 
 interface AddUserDialogProps {
   onUserAdded: () => void;
@@ -32,10 +33,11 @@ const AddUserFormSchema = CreateUserSchema.extend({
 });
 
 export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
+  const { isAdmin } = useAuth();
+  const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
-
+  
   const form = useForm<z.infer<typeof AddUserFormSchema>>({
     resolver: zodResolver(AddUserFormSchema),
     defaultValues: {
@@ -45,6 +47,18 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
       role: 'User',
     },
   });
+
+  const handleTriggerClick = () => {
+    if (isAdmin()) {
+        setOpen(true);
+    } else {
+        toast({
+            title: 'Permission Denied',
+            description: 'Only an Admin can perform this action.',
+            variant: 'destructive',
+        });
+    }
+  }
 
   const onSubmit = async (values: z.infer<typeof AddUserFormSchema>) => {
     setIsSubmitting(true);
@@ -72,7 +86,7 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
+        <Button onClick={handleTriggerClick}>
           <PlusCircle className="mr-2 h-4 w-4" />
           Add User
         </Button>

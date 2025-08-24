@@ -7,12 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { login } from '@/ai/flows/auth';
+import { login as loginFlow } from '@/ai/flows/auth';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
 
 export function LoginForm() {
     const router = useRouter();
+    const { login } = useAuth();
     const { toast } = useToast();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -21,13 +23,13 @@ export function LoginForm() {
     const handleLogin = async () => {
         setIsLoading(true);
         try {
-            const result = await login({ email, password });
-            if (result.success) {
+            const result = await loginFlow({ email, password });
+            if (result.success && result.user) {
+                login(result.user); // Save user to context
                 toast({
                     title: 'Login Successful',
                     description: 'Welcome back!',
                 });
-                // In a real app, you would set a session/cookie here.
                 router.push('/app');
             } else {
                 toast({

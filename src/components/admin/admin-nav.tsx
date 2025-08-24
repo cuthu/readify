@@ -13,9 +13,10 @@ export function AdminNav() {
     if (pathname.startsWith('/admin/users')) {
       return 'users';
     }
-    if (pathname.startsWith('/admin/documents')) {
-      return 'documents';
-    }
+    // A future implementation might have a documents tab
+    // if (pathname.startsWith('/admin/documents')) {
+    //   return 'documents';
+    // }
     return 'dashboard';
   };
 

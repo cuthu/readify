@@ -35,6 +35,7 @@ import { getDocuments, deleteDocument } from '@/ai/flows/document-management';
 import { Document } from '@/types/document';
 import { useToast } from '@/hooks/use-toast';
 import { audioConversion } from '@/ai/flows/audio-conversion';
+import { useAuth } from '@/hooks/use-auth';
 import Link from 'next/link';
 
 const voices = {
@@ -64,6 +65,7 @@ export function SidebarNavigation({
   selectedVoice,
   speakingRate
 }: SidebarNavigationProps) {
+  const { user, isUser } = useAuth();
   const [aiToolsOpen, setAiToolsOpen] = useState(true);
   const [myDocsOpen, setMyDocsOpen] = useState(true);
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -294,16 +296,19 @@ export function SidebarNavigation({
           )}
         </SidebarMenuItem>
       </SidebarGroup>
-       <SidebarMenuItem>
-        <Link href="/admin" passHref>
-            <SidebarMenuButton asChild>
-                <span>
-                    <LayoutDashboard />
-                    Admin Dashboard
-                </span>
-            </SidebarMenuButton>
-        </Link>
-      </SidebarMenuItem>
+      
+      {!isUser() && (
+        <SidebarMenuItem>
+            <Link href="/admin" passHref>
+                <SidebarMenuButton asChild>
+                    <span>
+                        <LayoutDashboard />
+                        Admin Dashboard
+                    </span>
+                </SidebarMenuButton>
+            </Link>
+        </SidebarMenuItem>
+      )}
     </SidebarMenu>
   );
 }
