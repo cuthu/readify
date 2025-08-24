@@ -16,7 +16,6 @@ import {
   deleteDocuments as deleteDocumentsFromService,
 } from '@/services/document-service';
 import { put } from '@vercel/blob';
-import * as pdfjs from 'pdfjs-dist';
 
 // Server Action for file upload to Vercel Blob
 export async function uploadDocument(formData: FormData): Promise<{ url?: string; error?: string }> {
@@ -39,23 +38,18 @@ export async function uploadDocument(formData: FormData): Promise<{ url?: string
 
 // Helper to extract text from different file types on the server
 const extractTextFromServer = async (url: string, fileName: string): Promise<string> => {
+    // PDF text extraction is now handled on the client side to avoid server-side environment issues.
+    if (fileName.endsWith('.pdf')) {
+        return '';
+    }
+
     const response = await fetch(url);
     if (!response.ok) {
         throw new Error(`Failed to fetch file from blob storage: ${response.statusText}`);
     }
     const arrayBuffer = await response.arrayBuffer();
-
-    if (fileName.endsWith('.pdf')) {
-        const pdf = await pdfjs.getDocument(arrayBuffer).promise;
-        let text = '';
-        for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i);
-            const content = await page.getTextContent();
-            // Using `any` for item because the type from pdfjs-dist is not fully compatible
-            text += content.items.map((item: any) => item.str).join(' ');
-        }
-        return text;
-    } else if (fileName.endsWith('.docx')) {
+    
+    if (fileName.endsWith('.docx')) {
         // docx-preview cannot be used on the server as it requires the `document` object.
         // Returning an empty string to prevent a crash.
         console.warn("Server-side text extraction for .docx is not supported. Content will be empty.");
@@ -87,7 +81,7 @@ const processDocumentFlow = ai.defineFlow(
     outputSchema: DocumentSchema,
   },
   async ({ fileName, url, userId, userEmail }) => {
-    // 1. Extract text from the document on the server
+    // 1. Extract text from the document on the server (if supported)
     const content = await extractTextFromServer(url, fileName);
 
     // 2. Save the document metadata (including content) to the database

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
@@ -16,16 +16,33 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/b
 interface DocumentViewerProps {
   file: File | string;
   scale: number;
+  onTextExtracted: (text: string) => void;
 }
 
-export function DocumentViewer({ file, scale }: DocumentViewerProps) {
+export function DocumentViewer({ file, scale, onTextExtracted }: DocumentViewerProps) {
   const [numPages, setNumPages] = useState<number | null>(null);
   const [pageNumber, setPageNumber] = useState(1);
+  const [isExtracting, setIsExtracting] = useState(false);
 
-  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }): void => {
+  const onDocumentLoadSuccess = useCallback(async ({ numPages }: { numPages: number }): Promise<void> => {
     setNumPages(numPages);
     setPageNumber(1);
-  };
+
+    // Only extract text from PDF files
+    if (typeof file === 'string' && !file.endsWith('.pdf')) return;
+    if (file instanceof File && file.type !== 'application/pdf') return;
+
+    setIsExtracting(true);
+    let fullText = '';
+    const pdf = await pdfjs.getDocument(file).promise;
+    for (let i = 1; i <= numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        fullText += textContent.items.map((item: any) => item.str).join(' ');
+    }
+    onTextExtracted(fullText);
+    setIsExtracting(false);
+  }, [file, onTextExtracted]);
   
   const goToPrevPage = () => setPageNumber(prevPageNumber => Math.max(prevPageNumber - 1, 1));
   const goToNextPage = () => setPageNumber(prevPageNumber => Math.min(prevPageNumber + 1, numPages || 1));

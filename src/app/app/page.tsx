@@ -88,13 +88,14 @@ export default function App() {
         userEmail: user.email,
       });
 
-      // Step 3: Update the UI with the processed content
-      setDocumentContent(savedDoc.content);
-
-      toast({
-        title: 'Ready to Go!',
-        description: `"${savedDoc.name}" is now ready for all AI tools.`,
-      });
+      // Step 3: Update the UI with the processed content if it was extracted on server
+      if (savedDoc.content) {
+        setDocumentContent(savedDoc.content);
+         toast({
+          title: 'Ready to Go!',
+          description: `"${savedDoc.name}" is now ready for all AI tools.`,
+        });
+      }
       
       // This custom event will trigger a refresh in the sidebar
       window.dispatchEvent(new CustomEvent('document-added'));
@@ -120,6 +121,11 @@ export default function App() {
       toast({
         title: 'Document Loaded',
         description: `"${doc.name}" is ready for audio generation and AI tools.`,
+      })
+    } else if (doc.name.endsWith('.pdf')) {
+      toast({
+        title: 'Document Loaded',
+        description: `PDF loaded. AI tools will be available after text is extracted.`,
       })
     } else {
        toast({
@@ -259,7 +265,19 @@ export default function App() {
                 
                 {activeDocument ? (
                   <div className="flex-1 flex flex-col h-full min-h-0">
-                    <DocumentViewer file={getFileOrUrl()} scale={scale} />
+                    <DocumentViewer 
+                        file={getFileOrUrl()} 
+                        scale={scale} 
+                        onTextExtracted={(text) => {
+                            if (!documentContent) { // Only set if not already set (e.g., from .txt)
+                                setDocumentContent(text);
+                                toast({
+                                    title: 'Content Ready',
+                                    description: 'PDF text has been extracted and AI tools are now active.',
+                                });
+                            }
+                        }}
+                    />
                      <PlayerBar 
                         onGenerateAudio={handleGenerateAudio}
                         onPlayPause={handlePlayPause}
