@@ -1,12 +1,41 @@
+'use client';
+
+import { useState } from 'react';
 import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload, FileText } from 'lucide-react';
+import { Upload, FileText, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { AppSidebar } from '@/components/app/sidebar-content';
+import { audioConversion } from '@/ai/flows/audio-conversion';
+import { useToast } from '@/hooks/use-toast';
 
 export default function App() {
+  const [textToSpeechInput, setTextToSpeechInput] = useState('');
+  const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
+  const [audioDataUri, setAudioDataUri] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const handleGenerateAudio = async () => {
+    setIsGeneratingAudio(true);
+    setAudioDataUri(null);
+    try {
+      const result = await audioConversion({ text: textToSpeechInput });
+      setAudioDataUri(result.audioDataUri);
+    } catch (error) {
+      console.error('Error generating audio:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to generate audio. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGeneratingAudio(false);
+    }
+  };
+
+
   return (
     <div className="dark bg-background text-foreground min-h-screen">
       <SidebarProvider>
@@ -49,8 +78,23 @@ export default function App() {
                     <CardDescription>Paste text below and generate audio.</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <Textarea placeholder="Paste your text here..." rows={10} />
-                    <Button>Generate Audio</Button>
+                    <Textarea
+                      placeholder="Paste your text here..."
+                      rows={10}
+                      value={textToSpeechInput}
+                      onChange={(e) => setTextToSpeechInput(e.target.value)}
+                    />
+                    <Button onClick={handleGenerateAudio} disabled={isGeneratingAudio || !textToSpeechInput}>
+                      {isGeneratingAudio && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      {isGeneratingAudio ? 'Generating...' : 'Generate Audio'}
+                    </Button>
+                    {audioDataUri && (
+                      <div className="mt-4">
+                        <audio controls src={audioDataUri} className="w-full">
+                          Your browser does not support the audio element.
+                        </audio>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
