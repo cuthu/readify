@@ -21,5 +21,6 @@ export {
     MessageSquare,
     List,
     Book,
-    FileQuestion
+    FileQuestion,
+    Send
 } from 'lucide-react';
