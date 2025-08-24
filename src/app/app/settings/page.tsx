@@ -13,27 +13,45 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
-import { updateUser } from '@/ai/flows/user-management';
+import { updateUser, changePassword } from '@/ai/flows/user-management';
 
 const ProfileFormSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
 });
 
+const PasswordFormSchema = z.object({
+    oldPassword: z.string().min(1, { message: "Old password is required." }),
+    newPassword: z.string().min(6, { message: "New password must be at least 6 characters." }),
+}).refine(data => data.oldPassword !== data.newPassword, {
+    message: "New password must be different from the old password.",
+    path: ["newPassword"],
+});
+
 export default function SettingsPage() {
   const { user, updateUser: updateAuthUser } = useAuth();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmittingProfile, setIsSubmittingProfile] = useState(false);
+  const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof ProfileFormSchema>>({
+  const profileForm = useForm<z.infer<typeof ProfileFormSchema>>({
     resolver: zodResolver(ProfileFormSchema),
     defaultValues: {
       name: user?.name || '',
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof ProfileFormSchema>) => {
+  const passwordForm = useForm<z.infer<typeof PasswordFormSchema>>({
+    resolver: zodResolver(PasswordFormSchema),
+    defaultValues: {
+        oldPassword: '',
+        newPassword: '',
+    },
+  });
+
+
+  const onProfileSubmit = async (values: z.infer<typeof ProfileFormSchema>) => {
     if (!user) return;
-    setIsSubmitting(true);
+    setIsSubmittingProfile(true);
     try {
       const updatedUserData = await updateUser({ id: user.id, data: { name: values.name } });
       if (updatedUserData) {
@@ -54,9 +72,34 @@ export default function SettingsPage() {
         variant: 'destructive',
       });
     } finally {
-      setIsSubmitting(false);
+      setIsSubmittingProfile(false);
     }
   }
+  
+  const onPasswordSubmit = async (values: z.infer<typeof PasswordFormSchema>) => {
+    if (!user) return;
+    setIsSubmittingPassword(true);
+    try {
+        const result = await changePassword({ ...values, userId: user.id });
+        if (result.success) {
+            toast({
+                title: 'Success',
+                description: 'Your password has been changed successfully.',
+            });
+            passwordForm.reset();
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error: any) {
+        toast({
+            title: 'Error Changing Password',
+            description: error.message || 'Something went wrong. Please try again.',
+            variant: 'destructive',
+        });
+    } finally {
+        setIsSubmittingPassword(false);
+    }
+  };
 
   if (!user) {
     // Or a loading spinner
@@ -87,8 +130,8 @@ export default function SettingsPage() {
         </TabsList>
         
         <TabsContent value="profile">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)}>
+          <Form {...profileForm}>
+            <form onSubmit={profileForm.handleSubmit(onProfileSubmit)}>
               <Card>
                 <CardHeader>
                   <CardTitle>Profile Details</CardTitle>
@@ -96,7 +139,7 @@ export default function SettingsPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <FormField
-                    control={form.control}
+                    control={profileForm.control}
                     name="name"
                     render={({ field }) => (
                       <FormItem>
@@ -117,8 +160,8 @@ export default function SettingsPage() {
                   </FormItem>
                 </CardContent>
                 <CardFooter className="border-t px-6 py-4">
-                  <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  <Button type="submit" disabled={isSubmittingProfile}>
+                    {isSubmittingProfile && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Save Changes
                   </Button>
                 </CardFooter>
@@ -128,15 +171,50 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="security">
-          <Card>
-            <CardHeader>
-              <CardTitle>Change Password</CardTitle>
-              <CardDescription>For your security, we recommend using a strong password.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 text-center text-muted-foreground py-12">
-               <p>(Password change feature coming soon)</p>
-            </CardContent>
-          </Card>
+            <Form {...passwordForm}>
+                <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}>
+                    <Card>
+                        <CardHeader>
+                        <CardTitle>Change Password</CardTitle>
+                        <CardDescription>For your security, we recommend using a strong password.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                             <FormField
+                                control={passwordForm.control}
+                                name="oldPassword"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Current Password</FormLabel>
+                                    <FormControl>
+                                    <Input type="password" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                             <FormField
+                                control={passwordForm.control}
+                                name="newPassword"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>New Password</FormLabel>
+                                    <FormControl>
+                                    <Input type="password" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                        </CardContent>
+                        <CardFooter className="border-t px-6 py-4">
+                            <Button type="submit" disabled={isSubmittingPassword}>
+                                {isSubmittingPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Change Password
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                </form>
+          </Form>
         </TabsContent>
         
         <TabsContent value="appearance">

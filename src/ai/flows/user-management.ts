@@ -7,14 +7,17 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { User, UserSchema, CreateUserSchema, UpdateUserSchema } from '@/types/user';
+import { User, UserSchema, CreateUserSchema, UpdateUserSchema, ChangePasswordSchema } from '@/types/user';
 import { z } from 'genkit';
 import {
   getUsers as getUsersFromService,
   addUser as addUserToService,
   updateUser as updateUserInService,
   deleteUser as deleteUserFromService,
+  getUserById as getUserByIdFromService, // Import new function
 } from '@/services/user-service';
+import bcrypt from 'bcryptjs';
+
 
 // Exported functions for client-side use
 export async function getUsers(): Promise<User[]> {
@@ -31,6 +34,10 @@ export async function updateUser(user: { id: string; data: z.infer<typeof Update
 
 export async function deleteUser(id: string): Promise<{ success: boolean }> {
   return deleteUserFlow(id);
+}
+
+export async function changePassword(input: z.infer<typeof ChangePasswordSchema>): Promise<{ success: boolean; message: string }> {
+    return changePasswordFlow(input);
 }
 
 
@@ -77,4 +84,27 @@ const deleteUserFlow = ai.defineFlow(
     await deleteUserFromService(id);
     return { success: true };
   }
+);
+
+const changePasswordFlow = ai.defineFlow(
+    {
+        name: 'changePasswordFlow',
+        inputSchema: ChangePasswordSchema,
+        outputSchema: z.object({ success: z.boolean(), message: z.string() }),
+    },
+    async ({ userId, oldPassword, newPassword }) => {
+        const user = await getUserByIdFromService(userId);
+        if (!user) {
+            return { success: false, message: 'User not found.' };
+        }
+
+        const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
+        if (!isPasswordValid) {
+            return { success: false, message: 'Incorrect old password.' };
+        }
+
+        await updateUserInService(userId, { password: newPassword });
+
+        return { success: true, message: 'Password updated successfully!' };
+    }
 );

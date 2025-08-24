@@ -22,3 +22,12 @@ export type CreateUser = z.infer<typeof CreateUserSchema>;
 // Schema for updating a user (all fields are optional)
 export const UpdateUserSchema = CreateUserSchema.partial();
 export type UpdateUser = z.infer<typeof UpdateUserSchema>;
+
+
+// Schema for changing a password
+export const ChangePasswordSchema = z.object({
+    userId: z.string(),
+    oldPassword: z.string(),
+    newPassword: z.string(),
+});
+export type ChangePassword = z.infer<typeof ChangePasswordSchema>;

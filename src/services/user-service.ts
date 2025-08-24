@@ -37,6 +37,18 @@ export async function getUserByEmail(email: string): Promise<User | null> {
     return users.find(user => user.email === email) || null;
 }
 
+
+/**
+ * Retrieves a single user by their ID.
+ * @param id - The ID of the user to retrieve.
+ * @returns A promise that resolves to the user or null if not found.
+ */
+export async function getUserById(id: string): Promise<User | null> {
+    const userMap = await redis.get<Record<string, User>>(USERS_KEY);
+    return userMap?.[id] || null;
+}
+
+
 /**
  * Adds a new user, hashing their password.
  * @param user - The user data to add (with a plain text password).
