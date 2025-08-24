@@ -21,7 +21,7 @@ export default function SummarizePage() {
   const { toast } = useToast();
 
   const handleFileChange = (file: File | null) => {
-    if (file && (file.type === 'application/pdf' || file.type.includes('document'))) {
+    if (file && (file.type === 'application/pdf' || file.type.includes('document') || file.type === 'text/plain')) {
       setUploadedFile(file);
       setSummary('');
       setKeyPoints([]);
@@ -29,7 +29,7 @@ export default function SummarizePage() {
     } else {
       toast({
         title: 'Invalid File Type',
-        description: 'Please upload a supported document type.',
+        description: 'Please upload a .pdf, .docx, or .txt file.',
         variant: 'destructive',
       });
       setUploadedFile(null);
@@ -66,6 +66,56 @@ export default function SummarizePage() {
     }
   };
 
+  const handleGenerate = async () => {
+    if (!uploadedFile) return;
+
+    setIsProcessing(true);
+    setSummary('');
+    setKeyPoints([]);
+    setGlossary({});
+
+    // For now, we will only support .txt files on the client.
+    // PDF and DOCX parsing would require more complex server-side setup.
+    if (uploadedFile.type !== 'text/plain') {
+        toast({
+            title: 'Unsupported File Type for Processing',
+            description: 'Currently, only .txt files can be processed directly. Support for PDF and DOCX is coming soon!',
+            variant: 'destructive',
+        });
+        setIsProcessing(false);
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+        const documentText = event.target?.result as string;
+        try {
+            const result = await summarizeDocument({ documentText });
+            setSummary(result.summary);
+            setKeyPoints(result.keyPoints);
+            setGlossary(result.glossary);
+        } catch (error) {
+            console.error('Error summarizing document:', error);
+            toast({
+                title: 'Error',
+                description: 'Failed to summarize the document. Please try again.',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+    reader.onerror = () => {
+        toast({
+            title: 'Error',
+            description: 'Failed to read the file.',
+            variant: 'destructive',
+        });
+        setIsProcessing(false);
+    }
+    reader.readAsText(uploadedFile);
+  }
+
   return (
     <div className="dark bg-background text-foreground min-h-screen">
       <SidebarProvider>
@@ -99,7 +149,7 @@ export default function SummarizePage() {
                                     )}
                                 </label>
                             </div>
-                            <Button className="w-full" disabled={!uploadedFile || isProcessing}>
+                            <Button className="w-full" disabled={!uploadedFile || isProcessing} onClick={handleGenerate}>
                                 {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 {isProcessing ? 'Processing...' : 'Generate'}
                             </Button>
@@ -115,7 +165,7 @@ export default function SummarizePage() {
                         </CardHeader>
                         <CardContent>
                             {isProcessing && !summary && <p className="text-muted-foreground">Generating summary...</p>}
-                            <p className="text-sm">{summary}</p>
+                            <p className="text-sm whitespace-pre-wrap">{summary}</p>
                         </CardContent>
                     </Card>
                     <Card>
