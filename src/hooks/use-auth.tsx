@@ -10,6 +10,7 @@ type AuthUser = Omit<User, 'password' | 'createdAt'>;
 interface AuthContextType {
   user: AuthUser | null;
   login: (userData: AuthUser) => void;
+  updateUser: (userData: AuthUser) => void;
   logout: () => void;
   isAdmin: () => boolean;
   isEditor: () => boolean;
@@ -38,6 +39,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(userData);
     localStorage.setItem('readify-user', JSON.stringify(userData));
   };
+  
+  const updateUser = (userData: AuthUser) => {
+    setUser(userData);
+    localStorage.setItem('readify-user', JSON.stringify(userData));
+  }
 
   const logout = () => {
     setUser(null);
@@ -52,7 +58,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAdmin, isEditor, isUser }}>
+    <AuthContext.Provider value={{ user, login, updateUser, logout, isAdmin, isEditor, isUser }}>
       {children}
     </AuthContext.Provider>
   );

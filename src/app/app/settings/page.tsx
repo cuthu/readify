@@ -1,18 +1,66 @@
 
 'use client';
 
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { useAuth } from '@/hooks/use-auth';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { User, Lock, Palette } from 'lucide-react';
+import { User, Lock, Palette, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
+import { updateUser } from '@/ai/flows/user-management';
+
+const ProfileFormSchema = z.object({
+  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
+});
 
 export default function SettingsPage() {
-  const { user } = useAuth();
+  const { user, updateUser: updateAuthUser } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  const form = useForm<z.infer<typeof ProfileFormSchema>>({
+    resolver: zodResolver(ProfileFormSchema),
+    defaultValues: {
+      name: user?.name || '',
+    },
+  });
+
+  const onSubmit = async (values: z.infer<typeof ProfileFormSchema>) => {
+    if (!user) return;
+    setIsSubmitting(true);
+    try {
+      const updatedUserData = await updateUser({ id: user.id, data: { name: values.name } });
+      if (updatedUserData) {
+        // Create a new user object for the auth context, ensuring we don't include the password
+        const { password, createdAt, ...userForAuth } = updatedUserData;
+        updateAuthUser(userForAuth);
+        toast({
+          title: 'Success',
+          description: 'Your profile has been updated.',
+        });
+      } else {
+        throw new Error('User data not returned from update.');
+      }
+    } catch (error) {
+       toast({
+        title: 'Error',
+        description: 'Failed to update your profile. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   if (!user) {
     // Or a loading spinner
-    return <div>Loading...</div>;
+    return <div className="p-8">Loading...</div>;
   }
 
   return (
@@ -39,15 +87,44 @@ export default function SettingsPage() {
         </TabsList>
         
         <TabsContent value="profile">
-          <Card>
-            <CardHeader>
-              <CardTitle>Profile Details</CardTitle>
-              <CardDescription>Update your name and profile picture.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 text-center text-muted-foreground py-12">
-              <p>(Profile editing feature coming soon)</p>
-            </CardContent>
-          </Card>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)}>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Profile Details</CardTitle>
+                  <CardDescription>Update your name. Email cannot be changed.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Your name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                   <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input value={user.email} disabled />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                </CardContent>
+                <CardFooter className="border-t px-6 py-4">
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Save Changes
+                  </Button>
+                </CardFooter>
+              </Card>
+            </form>
+          </Form>
         </TabsContent>
 
         <TabsContent value="security">
