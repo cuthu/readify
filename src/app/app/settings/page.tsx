@@ -7,13 +7,14 @@ import { z } from 'zod';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { User, Lock, Palette, Loader2 } from 'lucide-react';
+import { User, Lock, Palette, Loader2, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { updateUser, changePassword } from '@/ai/flows/user-management';
+import Link from 'next/link';
 
 const ProfileFormSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -31,6 +32,8 @@ export default function SettingsPage() {
   const { user, updateUser: updateAuthUser } = useAuth();
   const [isSubmittingProfile, setIsSubmittingProfile] = useState(false);
   const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const { toast } = useToast();
 
   const profileForm = useForm<z.infer<typeof ProfileFormSchema>>({
@@ -108,9 +111,15 @@ export default function SettingsPage() {
 
   return (
     <div className="p-4 sm:p-6 md:p-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold font-headline">Settings</h1>
-        <p className="text-muted-foreground">Manage your account and preferences.</p>
+       <div className="mb-6 relative">
+         <Link href="/app" className="absolute -top-1 left-0 flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
+            <ArrowLeft className="h-4 w-4" />
+            Back to app
+        </Link>
+        <div className="pt-8 text-center sm:text-left sm:pt-0">
+            <h1 className="text-3xl font-bold font-headline">Settings</h1>
+            <p className="text-muted-foreground">Manage your account and preferences.</p>
+        </div>
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
@@ -185,9 +194,18 @@ export default function SettingsPage() {
                                 render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Current Password</FormLabel>
-                                    <FormControl>
-                                    <Input type="password" {...field} />
-                                    </FormControl>
+                                    <div className="relative">
+                                        <FormControl>
+                                            <Input type={showOldPassword ? 'text' : 'password'} {...field} />
+                                        </FormControl>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowOldPassword(!showOldPassword)}
+                                            className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
+                                        >
+                                            {showOldPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                        </button>
+                                    </div>
                                     <FormMessage />
                                 </FormItem>
                                 )}
@@ -198,9 +216,18 @@ export default function SettingsPage() {
                                 render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>New Password</FormLabel>
-                                    <FormControl>
-                                    <Input type="password" {...field} />
-                                    </FormControl>
+                                    <div className="relative">
+                                        <FormControl>
+                                            <Input type={showNewPassword ? 'text' : 'password'} {...field} />
+                                        </FormControl>
+                                         <button
+                                            type="button"
+                                            onClick={() => setShowNewPassword(!showNewPassword)}
+                                            className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
+                                        >
+                                            {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                        </button>
+                                    </div>
                                     <FormMessage />
                                 </FormItem>
                                 )}
@@ -254,3 +281,5 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+    

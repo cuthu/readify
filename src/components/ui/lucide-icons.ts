@@ -1,3 +1,4 @@
+
 export { 
     Upload, 
     FileText, 
@@ -30,4 +31,8 @@ export {
     Palette,
     Search,
     ArrowUpDown,
+    Eye,
+    EyeOff,
 } from 'lucide-react';
+
+    

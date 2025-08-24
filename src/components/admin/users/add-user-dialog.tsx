@@ -21,7 +21,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { addUser } from '@/ai/flows/user-management';
 import { CreateUserSchema, UserRoleSchema } from '@/types/user';
-import { Loader2, PlusCircle } from 'lucide-react';
+import { Loader2, PlusCircle, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 
 interface AddUserDialogProps {
@@ -37,6 +37,7 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   
   const form = useForm<z.infer<typeof AddUserFormSchema>>({
     resolver: zodResolver(AddUserFormSchema),
@@ -132,9 +133,18 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Temporary Password</FormLabel>
-                  <FormControl>
-                    <Input type="password" {...field} />
-                  </FormControl>
+                  <div className="relative">
+                    <FormControl>
+                        <Input type={showPassword ? 'text' : 'password'} {...field} />
+                    </FormControl>
+                    <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
+                    >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -175,3 +185,5 @@ export function AddUserDialog({ onUserAdded }: AddUserDialogProps) {
     </Dialog>
   );
 }
+
+    
