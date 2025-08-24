@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Upload, FileText, Loader2, Mic } from 'lucide-react';
+import { Upload, FileText, Loader2, Mic, Volume2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -88,6 +88,12 @@ export default function App() {
         handleFileChange(files[0]);
     }
   };
+  
+  const handlePreviewVoice = (e: React.MouseEvent, voice: string) => {
+    e.stopPropagation();
+    // Placeholder for voice preview functionality
+    alert(`Previewing voice: ${voice}`);
+  };
 
 
   return (
@@ -155,8 +161,9 @@ export default function App() {
                                         <Label className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{provider}</Label>
                                         {voiceList.map(voice => (
                                             <SelectItem key={voice} value={voice}>
-                                                <div className="flex items-center gap-2">
+                                                <div className="flex items-center justify-between w-full">
                                                     <span>{voice.charAt(0).toUpperCase() + voice.slice(1)}</span>
+                                                    <Volume2 className="h-4 w-4 text-muted-foreground hover:text-foreground" onClick={(e) => handlePreviewVoice(e, voice)} />
                                                 </div>
                                             </SelectItem>
                                         ))}

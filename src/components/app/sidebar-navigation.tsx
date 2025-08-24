@@ -19,15 +19,29 @@ import {
   FileText,
   ChevronDown,
   LayoutDashboard,
+  Volume2,
 } from 'lucide-react';
 import { useState } from 'react';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+const voices = {
+  "OpenAI": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
+  "Amazon": ["ivy", "joanna", "kendr"],
+};
 
 export function SidebarNavigation() {
   const [aiToolsOpen, setAiToolsOpen] = useState(false);
   const [myDocsOpen, setMyDocsOpen] = useState(true); // Default to open for visibility
   const [speakingRate, setSpeakingRate] = useState(1.0);
+  const [selectedVoice, setSelectedVoice] = useState('alloy');
+
+  const handlePreviewVoice = (e: React.MouseEvent, voice: string) => {
+    e.stopPropagation();
+    // Placeholder for voice preview functionality
+    alert(`Previewing voice: ${voice}`);
+  };
 
   return (
     <SidebarMenu>
@@ -37,12 +51,36 @@ export function SidebarNavigation() {
           Upload New Document
         </SidebarMenuButton>
       </SidebarMenuItem>
+      
       <SidebarMenuItem>
-        <SidebarMenuButton>
-          <Mic />
-          Voice
-        </SidebarMenuButton>
+         <div className="flex flex-col gap-2 px-2 pt-2">
+            <Label htmlFor="voice-select-sidebar" className="flex items-center gap-2 text-sm font-medium">
+                <Mic className="h-4 w-4" />
+                Voice
+            </Label>
+            <Select value={selectedVoice} onValueChange={setSelectedVoice}>
+                <SelectTrigger id="voice-select-sidebar" className="w-full h-8 text-xs">
+                    <SelectValue placeholder="Select a voice" />
+                </SelectTrigger>
+                <SelectContent>
+                    {Object.entries(voices).map(([provider, voiceList]) => (
+                        <div key={provider}>
+                            <Label className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{provider}</Label>
+                            {voiceList.map(voice => (
+                                <SelectItem key={voice} value={voice}>
+                                    <div className="flex items-center justify-between w-full">
+                                        <span>{voice.charAt(0).toUpperCase() + voice.slice(1)}</span>
+                                        <Volume2 className="h-4 w-4 text-muted-foreground hover:text-foreground" onClick={(e) => handlePreviewVoice(e, voice)} />
+                                    </div>
+                                </SelectItem>
+                            ))}
+                        </div>
+                    ))}
+                </SelectContent>
+            </Select>
+        </div>
       </SidebarMenuItem>
+
       <SidebarMenuItem>
         <div className="flex flex-col gap-2 px-2 pt-2">
             <div className='flex items-center justify-between'>
