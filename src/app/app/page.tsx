@@ -13,10 +13,13 @@ import { Document } from '@/types/document';
 import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app/sidebar-content';
 import { useAuth } from '@/hooks/use-auth';
+import { DocumentViewer } from '@/components/app/main/document-viewer';
+import { PlayerBar } from '@/components/app/main/player-bar';
+
 
 export default function App() {
   const { user } = useAuth();
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [activeDocument, setActiveDocument] = useState<File | Document | null>(null);
   const [documentContent, setDocumentContent] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [activeTab, setActiveTab] = useState('upload');
@@ -41,10 +44,13 @@ export default function App() {
       return;
     }
 
+    // --- Immediate UI Update ---
+    setActiveDocument(file);
+    setDocumentContent(''); // Clear old content
     setIsProcessingFile(true);
-    setUploadedFile(file);
-    setDocumentContent('');
 
+
+    // --- Background Processing ---
     try {
       // Step 1: Upload the file to Vercel Blob storage
       const formData = new FormData();
@@ -57,7 +63,7 @@ export default function App() {
       
       toast({
         title: 'Upload Complete',
-        description: `"${file.name}" has been uploaded. Processing on the server...`,
+        description: `Processing "${file.name}" in the background.`,
       });
 
       // Step 2: Trigger the backend flow to process the file
@@ -72,13 +78,12 @@ export default function App() {
       setDocumentContent(savedDoc.content);
 
       toast({
-        title: 'Success!',
-        description: `"${savedDoc.name}" has been processed and saved.`,
+        title: 'Ready to Go!',
+        description: `"${savedDoc.name}" is now ready for all AI tools.`,
       });
       
       // This custom event will trigger a refresh in the sidebar
       window.dispatchEvent(new CustomEvent('document-added'));
-      setActiveTab('tts'); // Switch to TTS tab after successful processing
 
     } catch(e: any) {
         toast({
@@ -86,15 +91,17 @@ export default function App() {
           description: e.message || 'There was a problem processing your file.',
           variant: 'destructive'
         });
+        // If processing fails, reset the view
+        setActiveDocument(null);
     } finally {
       setIsProcessingFile(false);
     }
   };
   
   const handleDocumentSelect = (doc: Document) => {
+    setActiveDocument(doc);
     if (doc.content) {
       setDocumentContent(doc.content);
-      setActiveTab('tts');
       toast({
         title: 'Document Loaded',
         description: `"${doc.name}" is ready for audio generation and AI tools.`,
@@ -102,7 +109,7 @@ export default function App() {
     } else {
        toast({
         title: 'No Content',
-        description: `This document does not have any content to display.`,
+        description: `This document has no extracted text. AI tools may not work.`,
         variant: 'destructive',
       })
     }
@@ -139,6 +146,11 @@ export default function App() {
     }
   };
 
+  const getFileOrUrl = () => {
+    if (!activeDocument) return '';
+    return activeDocument instanceof File ? activeDocument : activeDocument.url;
+  }
+
   return (
     <SidebarProvider>
         <Sidebar>
@@ -151,36 +163,43 @@ export default function App() {
             />
         </Sidebar>
         <SidebarInset>
-            <div data-page="app-main" className="p-4 flex flex-col gap-4">
+            <div data-page="app-main" className="p-4 flex flex-col gap-4 h-full">
                 {/* AI Tool Dialogs */}
                 <SummarizeDialog documentContent={documentContent} />
                 <LearnDialog documentContent={documentContent} />
                 
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="upload">Upload Document</TabsTrigger>
-                        <TabsTrigger value="tts">Text to Speech</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="upload">
-                        <UploadTab 
-                            onDragEnter={onDragEnter}
-                            onDragLeave={onDragLeave}
-                            onDragOver={onDragOver}
-                            onDrop={onDrop}
-                            onFileSelect={onFileSelect}
-                            isDragging={isDragging}
-                            isProcessing={isProcessingFile}
-                            uploadedFile={uploadedFile}
-                        />
-                    </TabsContent>
-                    <TabsContent value="tts">
-                        <TtsTab 
-                            initialText={documentContent} 
-                            selectedVoice={selectedVoice}
-                            speakingRate={speakingRate}
-                        />
-                    </TabsContent>
-                </Tabs>
+                {activeDocument ? (
+                  <div className="flex-1 flex flex-col h-full min-h-0">
+                    <DocumentViewer file={getFileOrUrl()} />
+                    <PlayerBar />
+                  </div>
+                ) : (
+                  <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                      <TabsList className="grid w-full grid-cols-2">
+                          <TabsTrigger value="upload">Upload Document</TabsTrigger>
+                          <TabsTrigger value="tts">Text to Speech</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="upload">
+                          <UploadTab 
+                              onDragEnter={onDragEnter}
+                              onDragLeave={onDragLeave}
+                              onDragOver={onDragOver}
+                              onDrop={onDrop}
+                              onFileSelect={onFileSelect}
+                              isDragging={isDragging}
+                              isProcessing={isProcessingFile}
+                              uploadedFile={activeDocument instanceof File ? activeDocument : null}
+                          />
+                      </TabsContent>
+                      <TabsContent value="tts">
+                          <TtsTab 
+                              initialText={documentContent} 
+                              selectedVoice={selectedVoice}
+                              speakingRate={speakingRate}
+                          />
+                      </TabsContent>
+                  </Tabs>
+                )}
             </div>
         </SidebarInset>
     </SidebarProvider>
