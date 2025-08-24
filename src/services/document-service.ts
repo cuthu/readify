@@ -15,7 +15,7 @@ export interface Document {
 
 // Initialize the Upstash Redis client
 // This will automatically use the UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN
-// environment variables.
+// environment variables if they are set.
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
