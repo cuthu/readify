@@ -8,7 +8,6 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarGroup,
-  SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import {
   UploadCloud,
@@ -25,7 +24,7 @@ import { useState } from 'react';
 
 export function SidebarNavigation() {
   const [aiToolsOpen, setAiToolsOpen] = useState(false);
-  const [myDocsOpen, setMyDocsOpen] = useState(false);
+  const [myDocsOpen, setMyDocsOpen] = useState(true); // Default to open for visibility
 
   return (
     <SidebarMenu>
@@ -83,8 +82,15 @@ export function SidebarNavigation() {
               <SidebarMenuSubItem>
                 <SidebarMenuSubButton href="#">
                     <FileText className="mr-2 h-4 w-4" />
-                    <span>Document 1</span>
-                    <Trash2 className="ml-auto h-4 w-4 text-muted-foreground hover:text-foreground" />
+                    <span>Document 1.pdf</span>
+                    <Trash2 className="ml-auto h-4 w-4 text-muted-foreground transition-colors hover:text-destructive" />
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+               <SidebarMenuSubItem>
+                <SidebarMenuSubButton href="#">
+                    <FileText className="mr-2 h-4 w-4" />
+                    <span>Research Paper.docx</span>
+                    <Trash2 className="ml-auto h-4 w-4 text-muted-foreground transition-colors hover:text-destructive" />
                 </SidebarMenuSubButton>
               </SidebarMenuSubItem>
             </SidebarMenuSub>
