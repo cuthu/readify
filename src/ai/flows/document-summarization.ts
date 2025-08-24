@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -17,9 +18,9 @@ const SummarizeDocumentInputSchema = z.object({
 export type SummarizeDocumentInput = z.infer<typeof SummarizeDocumentInputSchema>;
 
 const SummarizeDocumentOutputSchema = z.object({
-  summary: z.string().describe('A concise summary of the document.'),
-  keyPoints: z.array(z.string()).describe('A list of the key points extracted from the document.'),
-  glossary: z.record(z.string(), z.string()).describe('A glossary of terms and their definitions from the document.'),
+  summary: z.string().describe('A concise summary of the document, written in a single paragraph.'),
+  keyPoints: z.array(z.string()).describe('A list of the most important key points or takeaways from the document.'),
+  glossary: z.record(z.string(), z.string()).describe('A glossary of important or complex terms found in the document, with their definitions.'),
 });
 export type SummarizeDocumentOutput = z.infer<typeof SummarizeDocumentOutputSchema>;
 
@@ -31,13 +32,19 @@ const summarizeDocumentPrompt = ai.definePrompt({
   name: 'summarizeDocumentPrompt',
   input: {schema: SummarizeDocumentInputSchema},
   output: {schema: SummarizeDocumentOutputSchema},
-  prompt: `You are an AI assistant designed to summarize documents, extract key points, and generate glossaries.
+  prompt: `You are an expert AI assistant tasked with analyzing and distilling the provided document. Your goal is to make the content easily understandable for the user.
 
-  Document: {{{documentText}}}
+Analyze the following document:
+---
+{{{documentText}}}
+---
 
-  Summary:
-  Key Points:
-  Glossary:`, // Provide clear instructions on how to summarize, extract key points, and generate glossaries.  Focus on brevity and clarity.
+Based on the document, please provide the following in the specified JSON format:
+1.  **summary**: A concise, single-paragraph summary of the document's main ideas.
+2.  **keyPoints**: A bulleted list of the most critical takeaways and insights.
+3.  **glossary**: A dictionary of important or complex terms found in the document. Each entry should have the term as the key and its definition as the value.
+
+Please ensure your output is clear, accurate, and directly derived from the document content.`,
 });
 
 const summarizeDocumentFlow = ai.defineFlow(
