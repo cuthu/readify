@@ -2,7 +2,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, FileText, Loader2, Mic, Volume2, Send, MessageSquare, List, Book, FileQuestion } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -308,7 +307,7 @@ export default function App() {
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-lg">
                                     <MessageSquare className="h-5 w-5" /> Chat
-                                </CardTitle>
+                                </Title>
                             </CardHeader>
                             <CardContent>
                                  {chatAnswer && (

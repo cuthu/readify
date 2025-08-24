@@ -37,13 +37,16 @@ const voices = {
 };
 
 const openDialog = (id: string) => {
-    document.getElementById(id)?.click();
+    const element = document.getElementById(id);
+    if (element) {
+        element.click();
+    }
 }
 
 
 export function SidebarNavigation() {
   const [aiToolsOpen, setAiToolsOpen] = useState(true);
-  const [myDocsOpen, setMyDocsOpen] = useState(true); // Default to open for visibility
+  const [myDocsOpen, setMyDocsOpen] = useState(true);
   const [speakingRate, setSpeakingRate] = useState(1.0);
   const [selectedVoice, setSelectedVoice] = useState('alloy');
 
@@ -56,7 +59,7 @@ export function SidebarNavigation() {
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <SidebarMenuButton>
+        <SidebarMenuButton onClick={() => document.getElementById('file-upload')?.click()}>
           <UploadCloud />
           Upload New Document
         </SidebarMenuButton>
