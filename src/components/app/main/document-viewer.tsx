@@ -9,9 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 
-// Configure the worker to render PDFs
-// The path is configured in next.config.ts
-pdfjs.GlobalWorkerOptions.workerSrc = '/static/chunks/pdf.worker.min.mjs';
+// Configure the worker to render PDFs from a CDN
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 
 interface DocumentViewerProps {
