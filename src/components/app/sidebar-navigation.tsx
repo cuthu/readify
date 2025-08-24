@@ -25,11 +25,14 @@ import {
   List,
   Book,
   FileQuestion,
+  Loader2,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Document, getDocuments, deleteDocument } from '@/ai/flows/document-management';
+import { useToast } from '@/hooks/use-toast';
 
 const voices = {
   "OpenAI": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
@@ -49,6 +52,54 @@ export function SidebarNavigation() {
   const [myDocsOpen, setMyDocsOpen] = useState(true);
   const [speakingRate, setSpeakingRate] = useState(1.0);
   const [selectedVoice, setSelectedVoice] = useState('alloy');
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [isLoadingDocs, setIsLoadingDocs] = useState(true);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const fetchDocuments = async () => {
+    setIsLoadingDocs(true);
+    try {
+      const docs = await getDocuments();
+      setDocuments(docs);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Could not fetch your documents.',
+        variant: 'destructive',
+      });
+      console.error(error);
+    } finally {
+      setIsLoadingDocs(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDocuments();
+  }, []);
+
+  const handleDeleteDocument = async (e: React.MouseEvent, docId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDeleting(docId);
+    try {
+      await deleteDocument(docId);
+      toast({
+        title: 'Success',
+        description: 'Document deleted.',
+      });
+      fetchDocuments(); // Refresh the list
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Could not delete the document.',
+        variant: 'destructive',
+      });
+      console.error(error);
+    } finally {
+      setIsDeleting(null);
+    }
+  };
 
   const handlePreviewVoice = (e: React.MouseEvent, voice: string) => {
     e.stopPropagation();
@@ -169,20 +220,28 @@ export function SidebarNavigation() {
           </SidebarMenuButton>
           {myDocsOpen && (
             <SidebarMenuSub>
-              <SidebarMenuSubItem>
-                <SidebarMenuSubButton href="#">
-                    <FileText className="mr-2 h-4 w-4" />
-                    <span>Document 1.pdf</span>
-                    <Trash2 className="ml-auto h-4 w-4 text-muted-foreground transition-colors hover:text-destructive" />
-                </SidebarMenuSubButton>
-              </SidebarMenuSubItem>
-               <SidebarMenuSubItem>
-                <SidebarMenuSubButton href="#">
-                    <FileText className="mr-2 h-4 w-4" />
-                    <span>Research Paper.docx</span>
-                    <Trash2 className="ml-auto h-4 w-4 text-muted-foreground transition-colors hover:text-destructive" />
-                </SidebarMenuSubButton>
-              </SidebarMenuSubItem>
+              {isLoadingDocs ? (
+                 <div className="flex justify-center items-center p-2"><Loader2 className="h-4 w-4 animate-spin" /></div>
+              ) : documents.length > 0 ? (
+                documents.map(doc => (
+                  <SidebarMenuSubItem key={doc.id}>
+                    <SidebarMenuSubButton href="#">
+                        <FileText className="mr-2 h-4 w-4" />
+                        <span className="truncate">{doc.name}</span>
+                        {isDeleting === doc.id ? (
+                          <Loader2 className="ml-auto h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2
+                            className="ml-auto h-4 w-4 text-muted-foreground transition-colors hover:text-destructive"
+                            onClick={(e) => handleDeleteDocument(e, doc.id)}
+                          />
+                        )}
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                ))
+              ) : (
+                <p className="px-4 py-2 text-xs text-muted-foreground">No documents found.</p>
+              )}
             </SidebarMenuSub>
           )}
         </SidebarMenuItem>

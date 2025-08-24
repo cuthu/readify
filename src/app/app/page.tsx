@@ -3,14 +3,12 @@
 
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SummarizeDialog } from '@/components/app/main/summarize-dialog';
 import { LearnDialog } from '@/components/app/main/learn-dialog';
 import { TtsTab } from '@/components/app/main/tts-tab';
 import { UploadTab } from '@/components/app/main/upload-tab';
-
+import { addDocument } from '@/ai/flows/document-management';
 
 export default function App() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -29,6 +27,21 @@ export default function App() {
         reader.onload = async (event) => {
             const content = event.target?.result as string;
             setDocumentContent(content);
+            try {
+              await addDocument({ name: file.name, content });
+              toast({
+                title: 'Success!',
+                description: `"${file.name}" has been uploaded and saved.`,
+              });
+               // Optionally refresh documents list in sidebar after upload
+               // This can be done via a shared state or a custom event
+            } catch (error) {
+               toast({
+                title: 'Error Saving Document',
+                description: 'There was a problem saving your document.',
+                variant: 'destructive'
+              });
+            }
             setActiveTab('tts'); // Switch to TTS tab after successful upload
         };
         reader.readAsText(file);
