@@ -295,12 +295,13 @@ export function SidebarNavigation({
         </SidebarMenuItem>
       </SidebarGroup>
        <SidebarMenuItem>
- {/* Use asChild to pass props and ref to the SidebarMenuButton's underlying element */}
         <Link href="/admin" passHref>
- <SidebarMenuButton asChild >
- <LayoutDashboard />
-            Admin Dashboard
-          </SidebarMenuButton>
+            <SidebarMenuButton asChild>
+                <span>
+                    <LayoutDashboard />
+                    Admin Dashboard
+                </span>
+            </SidebarMenuButton>
         </Link>
       </SidebarMenuItem>
     </SidebarMenu>
