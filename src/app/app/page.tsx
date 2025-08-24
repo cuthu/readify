@@ -13,6 +13,7 @@ import { Document } from '@/types/document';
 import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app/sidebar-content';
 import * as pdfjs from 'pdfjs-dist';
+import { renderAsync } from 'docx-preview';
 
 // Set up the worker for pdfjs-dist
 if (typeof window !== 'undefined') {
@@ -62,9 +63,16 @@ export default function App() {
     return text;
   };
 
+  const extractTextFromDocx = async (file: File): Promise<string> => {
+    const arrayBuffer = await file.arrayBuffer();
+    const tempDiv = document.createElement('div');
+    await renderAsync(arrayBuffer, tempDiv);
+    return tempDiv.innerText;
+  };
+
 
   const handleFileChange = async (file: File | null) => {
-    if (file && (file.type === 'application/pdf' || file.type === 'text/plain')) {
+    if (file && (file.type === 'application/pdf' || file.type === 'text/plain' || file.name.endsWith('.docx'))) {
       setUploadedFile(file);
       setDocumentContent('');
       
@@ -76,10 +84,12 @@ export default function App() {
           content = await file.text();
         } else if (file.type === 'application/pdf') {
           content = await extractTextFromPdf(file);
+        } else if (file.name.endsWith('.docx')) {
+          content = await extractTextFromDocx(file);
         } else {
             toast({
               title: 'Unsupported File Type',
-              description: 'Currently, only .txt and .pdf files can be processed.',
+              description: 'Currently, only .txt, .pdf, and .docx files can be processed.',
               variant: 'destructive'
             });
             setIsProcessingFile(false);
@@ -103,7 +113,7 @@ export default function App() {
     } else {
       toast({
         title: 'Invalid File Type',
-        description: 'Please upload a .pdf or .txt file.',
+        description: 'Please upload a .pdf, .txt, or .docx file.',
         variant: 'destructive',
       });
       setUploadedFile(null);

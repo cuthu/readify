@@ -30,7 +30,7 @@ export function UploadTab({
     <Card>
       <CardHeader>
         <CardTitle>Upload Document</CardTitle>
-        <CardDescription>Upload a .txt or .pdf file to get started. Support for .docx coming soon.</CardDescription>
+        <CardDescription>Upload a .txt, .pdf, or .docx file to get started.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div
@@ -40,7 +40,7 @@ export function UploadTab({
           onDrop={onDrop}
           className={cn("flex h-32 w-full cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/50 bg-muted/20 text-center transition-colors hover:border-primary", { "border-primary bg-primary/10": isDragging })}
         >
-          <input type="file" id="file-upload" className="hidden" accept=".txt,.pdf" onChange={onFileSelect} disabled={isProcessing} />
+          <input type="file" id="file-upload" className="hidden" accept=".txt,.pdf,.docx" onChange={onFileSelect} disabled={isProcessing} />
           <label htmlFor="file-upload" className={cn("flex flex-col items-center gap-2 text-muted-foreground", isProcessing ? "cursor-not-allowed" : "cursor-pointer")}>
             {isProcessing ? (
                 <>
