@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, FileText, Loader2, Mic } from 'lucide-react';
@@ -12,6 +12,7 @@ import { audioConversion } from '@/ai/flows/audio-conversion';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 const voices = {
   "OpenAI": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
@@ -23,6 +24,8 @@ export default function App() {
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
   const [audioDataUri, setAudioDataUri] = useState<string | null>(null);
   const [selectedVoice, setSelectedVoice] = useState('alloy');
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const { toast } = useToast();
 
   const handleGenerateAudio = async () => {
@@ -40,6 +43,49 @@ export default function App() {
       });
     } finally {
       setIsGeneratingAudio(false);
+    }
+  };
+
+  const handleFileChange = (file: File | null) => {
+    if (file && (file.type === 'application/pdf' || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')) {
+      setUploadedFile(file);
+    } else {
+      toast({
+        title: 'Invalid File Type',
+        description: 'Please upload a .pdf or .docx file.',
+        variant: 'destructive',
+      });
+      setUploadedFile(null);
+    }
+  };
+
+  const onDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const onDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const onDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault(); // This is necessary to allow dropping
+  };
+
+  const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      handleFileChange(files[0]);
+    }
+  };
+
+  const onFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+        handleFileChange(files[0]);
     }
   };
 
@@ -70,11 +116,22 @@ export default function App() {
                     <CardDescription>Upload a .pdf or .docx file to get started.</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                     <div className="flex h-32 w-full cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/50 bg-muted/20 text-center transition-colors hover:border-primary">
-                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                     <div
+                        onDragEnter={onDragEnter}
+                        onDragLeave={onDragLeave}
+                        onDragOver={onDragOver}
+                        onDrop={onDrop}
+                        className={cn("flex h-32 w-full cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/50 bg-muted/20 text-center transition-colors hover:border-primary", { "border-primary bg-primary/10": isDragging })}
+                     >
+                        <input type="file" id="file-upload" className="hidden" accept=".pdf,.docx" onChange={onFileSelect} />
+                        <label htmlFor="file-upload" className="flex flex-col items-center gap-2 text-muted-foreground cursor-pointer">
                             <Upload className="h-8 w-8" />
-                            <p>Click to browse or drag & drop</p>
-                        </div>
+                            {uploadedFile ? (
+                                <p>{uploadedFile.name}</p>
+                            ) : (
+                                <p>Click to browse or drag & drop</p>
+                            )}
+                        </label>
                     </div>
                   </CardContent>
                 </Card>
