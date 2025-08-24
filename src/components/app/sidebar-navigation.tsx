@@ -27,14 +27,16 @@ import {
   FileQuestion,
   Loader2,
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Document, getDocuments, deleteDocument } from '@/ai/flows/document-management';
 import { useToast } from '@/hooks/use-toast';
+import { audioConversion } from '@/ai/flows/audio-conversion';
 
 const voices = {
+  "Google": ["Algenib", "auriga", "procyon", "polaris", "spica"],
   "OpenAI": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
   "Amazon": ["ivy", "joanna", "kendr"],
 };
@@ -46,15 +48,28 @@ const openDialog = (id: string) => {
     }
 }
 
+interface SidebarNavigationProps {
+  onDocumentSelect: (doc: Document) => void;
+  onVoiceChange: (voice: string) => void;
+  onRateChange: (rate: number) => void;
+  selectedVoice: string;
+  speakingRate: number;
+}
 
-export function SidebarNavigation() {
+export function SidebarNavigation({
+  onDocumentSelect,
+  onVoiceChange,
+  onRateChange,
+  selectedVoice,
+  speakingRate
+}: SidebarNavigationProps) {
   const [aiToolsOpen, setAiToolsOpen] = useState(true);
   const [myDocsOpen, setMyDocsOpen] = useState(true);
-  const [speakingRate, setSpeakingRate] = useState(1.0);
-  const [selectedVoice, setSelectedVoice] = useState('alloy');
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoadingDocs, setIsLoadingDocs] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [isPreviewingVoice, setIsPreviewingVoice] = useState<string | null>(null);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
 
   const fetchDocuments = async () => {
@@ -76,6 +91,12 @@ export function SidebarNavigation() {
 
   useEffect(() => {
     fetchDocuments();
+    // Listen for the custom event to refresh documents
+    const handleDocAdded = () => fetchDocuments();
+    window.addEventListener('document-added', handleDocAdded);
+    return () => {
+        window.removeEventListener('document-added', handleDocAdded);
+    }
   }, []);
 
   const handleDeleteDocument = async (e: React.MouseEvent, docId: string) => {
@@ -101,14 +122,33 @@ export function SidebarNavigation() {
     }
   };
 
-  const handlePreviewVoice = (e: React.MouseEvent, voice: string) => {
+  const handlePreviewVoice = async (e: React.MouseEvent, voice: string) => {
     e.stopPropagation();
-    // Placeholder for voice preview functionality
-    alert(`Previewing voice: ${voice}`);
+    if (isPreviewingVoice) return;
+    
+    setIsPreviewingVoice(voice);
+    try {
+        const result = await audioConversion({ text: "Hello, this is a preview of the selected voice.", voiceName: voice });
+        if (previewAudioRef.current) {
+            previewAudioRef.current.src = result.audioDataUri;
+            previewAudioRef.current.play();
+        }
+    } catch (error) {
+        console.error('Error generating voice preview:', error);
+        toast({
+            title: 'Preview Error',
+            description: 'Could not generate voice preview.',
+            variant: 'destructive',
+        });
+        setIsPreviewingVoice(null); // Reset on error
+    }
   };
 
   return (
     <SidebarMenu>
+      {/* Hidden audio element for previews */}
+      <audio ref={previewAudioRef} onEnded={() => setIsPreviewingVoice(null)} className="hidden" />
+
       <SidebarMenuItem>
         <SidebarMenuButton onClick={() => document.getElementById('file-upload')?.click()}>
           <UploadCloud />
@@ -122,7 +162,7 @@ export function SidebarNavigation() {
                 <Mic className="h-4 w-4" />
                 Voice
             </Label>
-            <Select value={selectedVoice} onValueChange={setSelectedVoice}>
+            <Select value={selectedVoice} onValueChange={onVoiceChange}>
                 <SelectTrigger id="voice-select-sidebar" className="w-full h-8 text-xs">
                     <SelectValue placeholder="Select a voice" />
                 </SelectTrigger>
@@ -134,7 +174,14 @@ export function SidebarNavigation() {
                                 <SelectItem key={voice} value={voice}>
                                     <div className="flex items-center justify-between w-full">
                                         <span>{voice.charAt(0).toUpperCase() + voice.slice(1)}</span>
-                                        <Volume2 className="ml-4 h-4 w-4 text-muted-foreground hover:text-foreground" onClick={(e) => handlePreviewVoice(e, voice)} />
+                                        {isPreviewingVoice === voice ? (
+                                          <Loader2 className="ml-4 h-4 w-4 animate-spin" />
+                                        ) : (
+                                          <Volume2
+                                            className="ml-4 h-4 w-4 text-muted-foreground hover:text-foreground cursor-pointer"
+                                            onClick={(e) => handlePreviewVoice(e, voice)}
+                                          />
+                                        )}
                                     </div>
                                 </SelectItem>
                             ))}
@@ -159,8 +206,8 @@ export function SidebarNavigation() {
             min={0.5}
             max={2}
             step={0.1}
-            defaultValue={[1]}
-            onValueChange={(value) => setSpeakingRate(value[0])}
+            value={[speakingRate]}
+            onValueChange={(value) => onRateChange(value[0])}
           />
         </div>
       </SidebarMenuItem>
@@ -225,7 +272,7 @@ export function SidebarNavigation() {
               ) : documents.length > 0 ? (
                 documents.map(doc => (
                   <SidebarMenuSubItem key={doc.id}>
-                    <SidebarMenuSubButton href="#">
+                    <SidebarMenuSubButton onClick={() => onDocumentSelect(doc)}>
                         <FileText className="mr-2 h-4 w-4" />
                         <span className="truncate">{doc.name}</span>
                         {isDeleting === doc.id ? (

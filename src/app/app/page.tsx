@@ -1,20 +1,22 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SummarizeDialog } from '@/components/app/main/summarize-dialog';
 import { LearnDialog } from '@/components/app/main/learn-dialog';
 import { TtsTab } from '@/components/app/main/tts-tab';
 import { UploadTab } from '@/components/app/main/upload-tab';
-import { addDocument } from '@/ai/flows/document-management';
+import { addDocument, Document } from '@/ai/flows/document-management';
 
 export default function App() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [documentContent, setDocumentContent] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [activeTab, setActiveTab] = useState('upload');
+  const [selectedVoice, setSelectedVoice] = useState('alloy');
+  const [speakingRate, setSpeakingRate] = useState(1.0);
   const { toast } = useToast();
 
   const handleFileChange = (file: File | null) => {
@@ -33,8 +35,8 @@ export default function App() {
                 title: 'Success!',
                 description: `"${file.name}" has been uploaded and saved.`,
               });
-               // Optionally refresh documents list in sidebar after upload
-               // This can be done via a shared state or a custom event
+               // This custom event will trigger a refresh in the sidebar
+               window.dispatchEvent(new CustomEvent('document-added'));
             } catch (error) {
                toast({
                 title: 'Error Saving Document',
@@ -63,6 +65,24 @@ export default function App() {
       setDocumentContent('');
     }
   };
+  
+  const handleDocumentSelect = (doc: Document) => {
+    if (doc.content) {
+      setDocumentContent(doc.content);
+      setActiveTab('tts');
+      toast({
+        title: 'Document Loaded',
+        description: `"${doc.name}" is ready for audio generation and AI tools.`,
+      })
+    } else {
+       toast({
+        title: 'No Content',
+        description: `This document does not have any content to display.`,
+        variant: 'destructive',
+      })
+    }
+  }
+
 
   const onDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -117,7 +137,11 @@ export default function App() {
                  />
             </TabsContent>
             <TabsContent value="tts">
-                 <TtsTab initialText={documentContent} />
+                 <TtsTab 
+                    initialText={documentContent} 
+                    selectedVoice={selectedVoice}
+                    speakingRate={speakingRate}
+                 />
             </TabsContent>
         </Tabs>
     </div>
