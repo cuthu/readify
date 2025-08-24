@@ -22,6 +22,7 @@ import {
 import { summarizeDocument } from '@/ai/flows/document-summarization';
 import { interactiveLearning } from '@/ai/flows/interactive-learning';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 
 const voices = {
@@ -211,7 +212,7 @@ export default function App() {
   }
 
   return (
-    <main className="p-4 flex flex-col gap-4">
+    <div className="p-4 flex flex-col gap-4">
         {/* AI Tool Dialogs */}
         <Dialog>
             <DialogTrigger asChild id="summarize-dialog-trigger" className="hidden"></DialogTrigger>
@@ -306,7 +307,7 @@ export default function App() {
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-lg">
                                     <MessageSquare className="h-5 w-5" /> Chat
-                                </Title>
+                                </CardTitle>
                             </CardHeader>
                             <CardContent>
                                  {chatAnswer && (
@@ -334,84 +335,92 @@ export default function App() {
                 </div>
             </DialogContent>
         </Dialog>
-
-
-        <Card>
-            <CardHeader>
-            <CardTitle>Upload Document</CardTitle>
-            <CardDescription>Upload a .txt file to get started.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div
-                onDragEnter={onDragEnter}
-                onDragLeave={onDragLeave}
-                onDragOver={onDragOver}
-                onDrop={onDrop}
-                className={cn("flex h-32 w-full cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/50 bg-muted/20 text-center transition-colors hover:border-primary", { "border-primary bg-primary/10": isDragging })}
-                >
-                <input type="file" id="file-upload" className="hidden" accept=".txt" onChange={onFileSelect} />
-                <label htmlFor="file-upload" className="flex flex-col items-center gap-2 text-muted-foreground cursor-pointer">
-                    <Upload className="h-8 w-8" />
-                    {uploadedFile ? (
-                        <p>{uploadedFile.name}</p>
-                    ) : (
-                        <p>Click to browse or drag & drop</p>
-                    )}
-                </label>
-            </div>
-            </CardContent>
-        </Card>
-            
-        <Card>
-            <CardHeader>
-            <CardTitle>Text to Speech</CardTitle>
-            <CardDescription>The content of your uploaded document appears here. You can edit it before generating audio.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-            <div className="grid gap-2">
-                <Label htmlFor="voice-select">Voice</Label>
-                <Select value={selectedVoice} onValueChange={setSelectedVoice}>
-                    <SelectTrigger id="voice-select" className="w-full">
-                        <SelectValue placeholder="Select a voice" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {Object.entries(voices).map(([provider, voiceList]) => (
-                            <div key={provider}>
-                                <Label className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{provider}</Label>
-                                {voiceList.map(voice => (
-                                    <SelectItem key={voice} value={voice}>
-                                        <div className="flex items-center justify-between w-full">
-                                            <span>{voice.charAt(0).toUpperCase() + voice.slice(1)}</span>
-                                            <Volume2 className="ml-4 h-4 w-4 text-muted-foreground hover:text-foreground" onClick={(e) => handlePreviewVoice(e, voice)} />
-                                        </div>
-                                    </SelectItem>
+        
+        <Tabs defaultValue="upload" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="upload">Upload Document</TabsTrigger>
+                <TabsTrigger value="tts">Text to Speech</TabsTrigger>
+            </TabsList>
+            <TabsContent value="upload">
+                <Card>
+                    <CardHeader>
+                    <CardTitle>Upload Document</CardTitle>
+                    <CardDescription>Upload a .txt file to get started. Support for .pdf and .docx coming soon.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div
+                        onDragEnter={onDragEnter}
+                        onDragLeave={onDragLeave}
+                        onDragOver={onDragOver}
+                        onDrop={onDrop}
+                        className={cn("flex h-32 w-full cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/50 bg-muted/20 text-center transition-colors hover:border-primary", { "border-primary bg-primary/10": isDragging })}
+                        >
+                        <input type="file" id="file-upload" className="hidden" accept=".txt" onChange={onFileSelect} />
+                        <label htmlFor="file-upload" className="flex flex-col items-center gap-2 text-muted-foreground cursor-pointer">
+                            <Upload className="h-8 w-8" />
+                            {uploadedFile ? (
+                                <p>{uploadedFile.name}</p>
+                            ) : (
+                                <p>Click to browse or drag & drop</p>
+                            )}
+                        </label>
+                    </div>
+                    </CardContent>
+                </Card>
+            </TabsContent>
+            <TabsContent value="tts">
+                 <Card>
+                    <CardHeader>
+                    <CardTitle>Text to Speech</CardTitle>
+                    <CardDescription>The content of your uploaded document appears here. You can edit it before generating audio.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                    <div className="grid gap-2">
+                        <Label htmlFor="voice-select">Voice</Label>
+                        <Select value={selectedVoice} onValuechange={setSelectedVoice}>
+                            <SelectTrigger id="voice-select" className="w-full">
+                                <SelectValue placeholder="Select a voice" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {Object.entries(voices).map(([provider, voiceList]) => (
+                                    <div key={provider}>
+                                        <Label className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{provider}</Label>
+                                        {voiceList.map(voice => (
+                                            <SelectItem key={voice} value={voice}>
+                                                <div className="flex items-center justify-between w-full">
+                                                    <span>{voice.charAt(0).toUpperCase() + voice.slice(1)}</span>
+                                                    <Volume2 className="ml-4 h-4 w-4 text-muted-foreground hover:text-foreground" onClick={(e) => handlePreviewVoice(e, voice)} />
+                                                </div>
+                                            </SelectItem>
+                                        ))}
+                                    </div>
                                 ))}
-                            </div>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </div>
-            <Textarea
-                placeholder="Upload a .txt file or paste your text here..."
-                rows={15}
-                value={textToSpeechInput}
-                onChange={(e) => setTextToSpeechInput(e.target.value)}
-                disabled={!documentContent && !textToSpeechInput}
-            />
-            <Button onClick={handleGenerateAudio} disabled={isGeneratingAudio || !textToSpeechInput}>
-                {isGeneratingAudio && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isGeneratingAudio ? 'Generating...' : 'Generate Audio'}
-                <Mic className="ml-2 h-4 w-4" />
-            </Button>
-            {audioDataUri && (
-                <div className="mt-4">
-                <audio controls src={audioDataUri} className="w-full">
-                    Your browser does not support the audio element.
-                </audio>
-                </div>
-            )}
-            </CardContent>
-        </Card>
-    </main>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <Textarea
+                        placeholder="Upload a document or paste your text here..."
+                        rows={15}
+                        value={textToSpeechInput}
+                        onChange={(e) => setTextToSpeechInput(e.target.value)}
+                    />
+                    <Button onClick={handleGenerateAudio} disabled={isGeneratingAudio || !textToSpeechInput}>
+                        {isGeneratingAudio && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        {isGeneratingAudio ? 'Generating...' : 'Generate Audio'}
+                        <Mic className="ml-2 h-4 w-4" />
+                    </Button>
+                    {audioDataUri && (
+                        <div className="mt-4">
+                        <audio controls src={audioDataUri} className="w-full">
+                            Your browser does not support the audio element.
+                        </audio>
+                        </div>
+                    )}
+                    </CardContent>
+                </Card>
+            </TabsContent>
+        </Tabs>
+    </div>
   );
-}
+
+    
