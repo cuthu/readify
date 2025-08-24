@@ -25,7 +25,7 @@ export default function App() {
   const [documentContent, setDocumentContent] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [activeTab, setActiveTab] = useState('upload');
-  const [selectedVoice, setSelectedVoice] = useState('alloy');
+  const [selectedVoice, setSelectedVoice] = useState('ivy'); // Default to Amazon
   const [speakingRate, setSpeakingRate] = useState(1.0);
   const [isProcessingFile, setIsProcessingFile] = useState(false);
   
@@ -105,6 +105,7 @@ export default function App() {
         });
       }
       
+      // THIS IS THE FIX: Dispatch event to tell sidebar to refresh
       window.dispatchEvent(new CustomEvent('document-added'));
 
     } catch(e: any) {

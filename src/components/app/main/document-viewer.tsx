@@ -22,17 +22,16 @@ const MemoizedPage = memo(Page);
 export function DocumentViewer({ file, scale, onTextExtracted }: DocumentViewerProps) {
   const [numPages, setNumPages] = useState<number | null>(null);
 
-  const onDocumentLoadSuccess = useCallback(async ({ numPages }: { numPages: number }): Promise<void> => {
-    setNumPages(numPages);
-
+  const onDocumentLoadSuccess = useCallback(async (pdf: any): Promise<void> => {
+    setNumPages(pdf.numPages);
+    
     // Only extract text from PDF files, as other types are handled elsewhere
     if (typeof file === 'string' && !file.endsWith('.pdf')) return;
     if (file instanceof File && file.type !== 'application/pdf') return;
 
     try {
-      const pdf = await pdfjs.getDocument(file).promise;
       let fullText = '';
-      for (let i = 1; i <= numPages; i++) {
+      for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i);
           const textContent = await page.getTextContent();
           fullText += textContent.items.map((item: any) => item.str).join(' ');
@@ -45,7 +44,7 @@ export function DocumentViewer({ file, scale, onTextExtracted }: DocumentViewerP
   }, [file, onTextExtracted]);
 
   return (
-    <div className="flex-1 w-full overflow-auto rounded-lg border bg-secondary/20 p-4">
+    <div className="flex-1 w-full rounded-lg border bg-secondary/20 p-4">
        <Document
           file={file}
           onLoadSuccess={onDocumentLoadSuccess}

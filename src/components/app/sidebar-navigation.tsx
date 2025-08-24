@@ -126,7 +126,7 @@ export function SidebarNavigation({
   };
 
   const handlePreviewVoice = async (e: React.MouseEvent, voice: string) => {
-    e.stopPropagation();
+    e.stopPropagation(); // THIS IS THE FIX: Prevents the select item from being triggered.
     if (isPreviewingVoice) return;
     
     setIsPreviewingVoice(voice);
