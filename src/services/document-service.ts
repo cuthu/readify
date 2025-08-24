@@ -11,6 +11,7 @@ export interface Document {
   id: string;
   name: string;
   content: string;
+  url: string;
 }
 
 // Initialize the Upstash Redis client

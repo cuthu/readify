@@ -8,7 +8,7 @@ import { SummarizeDialog } from '@/components/app/main/summarize-dialog';
 import { LearnDialog } from '@/components/app/main/learn-dialog';
 import { TtsTab } from '@/components/app/main/tts-tab';
 import { UploadTab } from '@/components/app/main/upload-tab';
-import { addDocument } from '@/ai/flows/document-management';
+import { addDocument, uploadDocument } from '@/ai/flows/document-management';
 import { Document } from '@/types/document';
 import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app/sidebar-content';
@@ -31,9 +31,9 @@ export default function App() {
   const [isProcessingFile, setIsProcessingFile] = useState(false);
   const { toast } = useToast();
   
-  const saveDocument = async (name: string, content: string) => {
+  const saveDocument = async (name: string, content: string, url: string) => {
     try {
-      await addDocument({ name, content });
+      await addDocument({ name, content, url });
       toast({
         title: 'Success!',
         description: `"${name}" has been uploaded and saved.`,
@@ -97,14 +97,24 @@ export default function App() {
         }
 
         setDocumentContent(content);
-        const saved = await saveDocument(file.name, content);
+
+        // Upload the file to Vercel Blob
+        const formData = new FormData();
+        formData.append('file', file);
+        const { url } = await uploadDocument(formData);
+
+        if (!url) {
+            throw new Error('File upload failed.');
+        }
+
+        const saved = await saveDocument(file.name, content, url);
         if (saved) {
           setActiveTab('tts'); // Switch to TTS tab after successful upload
         }
       } catch(e: any) {
           toast({
             title: 'Error Processing File',
-            description: e.message || 'There was a problem reading the content of your file.',
+            description: e.message || 'There was a problem reading or uploading your file.',
             variant: 'destructive'
           });
       } finally {

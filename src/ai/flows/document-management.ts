@@ -13,9 +13,25 @@ import {
   getDocuments as getDocumentsFromService,
   addDocument as addDocumentToService,
   deleteDocument as deleteDocumentFromService,
-  Document as DocumentType,
 } from '@/services/document-service';
+import { put } from '@vercel/blob';
 
+// Server Action for file upload
+export async function uploadDocument(formData: FormData): Promise<{ url?: string; error?: string }> {
+    const file = formData.get('file') as File;
+    if (!file) {
+        return { error: 'No file provided' };
+    }
+
+    try {
+        const blob = await put(file.name, file, {
+            access: 'public',
+        });
+        return { url: blob.url };
+    } catch (error: any) {
+        return { error: error.message };
+    }
+}
 
 
 // Exported functions for client-side use
