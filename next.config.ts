@@ -18,6 +18,12 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '2mb',
+      serverActionsTimeout: 120,
+    },
+  },
 };
 
 export default nextConfig;
