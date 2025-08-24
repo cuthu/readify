@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SummarizeDialog } from '@/components/app/main/summarize-dialog';
@@ -9,6 +9,7 @@ import { LearnDialog } from '@/components/app/main/learn-dialog';
 import { TtsTab } from '@/components/app/main/tts-tab';
 import { UploadTab } from '@/components/app/main/upload-tab';
 import { uploadDocument, processAndSaveDocument } from '@/ai/flows/document-management';
+import { audioConversion } from '@/ai/flows/audio-conversion';
 import { Document } from '@/types/document';
 import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app/sidebar-content';
@@ -26,6 +27,18 @@ export default function App() {
   const [selectedVoice, setSelectedVoice] = useState('alloy');
   const [speakingRate, setSpeakingRate] = useState(1.0);
   const [isProcessingFile, setIsProcessingFile] = useState(false);
+  
+  // New state for audio player
+  const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
+  const [audioDataUri, setAudioDataUri] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  // New state for document viewer zoom
+  const [scale, setScale] = useState(1.0);
+
   const { toast } = useToast();
   
   const handleFileChange = async (file: File | null) => {
@@ -35,7 +48,7 @@ export default function App() {
         return;
     }
 
-    if (!file.type.startsWith('text/plain') && !file.type.startsWith('application/pdf') && !file.name.endsWith('.docx')) {
+    if (!file.type.startsWith('application/pdf') && !file.type.endsWith('.docx') && !file.type.endsWith('.txt')) {
        toast({
         title: 'Invalid File Type',
         description: 'Please upload a .pdf, .txt, or .docx file.',
@@ -47,6 +60,7 @@ export default function App() {
     // --- Immediate UI Update ---
     setActiveDocument(file);
     setDocumentContent(''); // Clear old content
+    resetAudioState();
     setIsProcessingFile(true);
 
 
@@ -100,8 +114,9 @@ export default function App() {
   
   const handleDocumentSelect = (doc: Document) => {
     setActiveDocument(doc);
+    setDocumentContent(doc.content || '');
+    resetAudioState();
     if (doc.content) {
-      setDocumentContent(doc.content);
       toast({
         title: 'Document Loaded',
         description: `"${doc.name}" is ready for audio generation and AI tools.`,
@@ -114,6 +129,78 @@ export default function App() {
       })
     }
   }
+
+  const handleGenerateAudio = async () => {
+    if (!documentContent) {
+        toast({ title: 'No Content', description: 'There is no text to generate audio from.', variant: 'destructive' });
+        return;
+    }
+    setIsGeneratingAudio(true);
+    resetAudioState();
+    try {
+        const result = await audioConversion({ text: documentContent, voiceName: selectedVoice });
+        setAudioDataUri(result.audioDataUri);
+        toast({ title: 'Success', description: 'Audio generated successfully.' });
+    } catch (error) {
+        toast({ title: 'Audio Generation Failed', description: 'Could not generate audio. Please try again.', variant: 'destructive' });
+        console.error("Audio generation error", error);
+    } finally {
+        setIsGeneratingAudio(false);
+    }
+  };
+
+  const resetAudioState = () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      setAudioDataUri(null);
+      setIsPlaying(false);
+      setCurrentTime(0);
+      setDuration(0);
+  }
+
+  const handlePlayPause = () => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play();
+    }
+    setIsPlaying(!isPlaying);
+  };
+  
+  const handleSeek = (time: number) => {
+    if (audioRef.current) {
+        audioRef.current.currentTime = time;
+        setCurrentTime(time);
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+        setCurrentTime(audioRef.current.currentTime);
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (audioRef.current) {
+        setDuration(audioRef.current.duration);
+    }
+  };
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (audio) {
+        audio.addEventListener('timeupdate', handleTimeUpdate);
+        audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+        audio.addEventListener('ended', () => setIsPlaying(false));
+        return () => {
+            audio.removeEventListener('timeupdate', handleTimeUpdate);
+            audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+            audio.removeEventListener('ended', () => setIsPlaying(false));
+        };
+    }
+  }, [audioDataUri]);
 
 
   const onDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
@@ -148,8 +235,10 @@ export default function App() {
 
   const getFileOrUrl = () => {
     if (!activeDocument) return '';
-    return activeDocument instanceof File ? activeDocument : activeDocument.url;
+    return activeDocument instanceof File ? URL.createObjectURL(activeDocument) : activeDocument.url;
   }
+
+  const isDocumentReadyForAudio = !!documentContent && !isProcessingFile;
 
   return (
     <SidebarProvider>
@@ -170,8 +259,21 @@ export default function App() {
                 
                 {activeDocument ? (
                   <div className="flex-1 flex flex-col h-full min-h-0">
-                    <DocumentViewer file={getFileOrUrl()} />
-                    <PlayerBar />
+                    <DocumentViewer file={getFileOrUrl()} scale={scale} />
+                     <PlayerBar 
+                        onGenerateAudio={handleGenerateAudio}
+                        onPlayPause={handlePlayPause}
+                        onSeek={handleSeek}
+                        onZoomIn={() => setScale(s => Math.min(s + 0.1, 2.0))}
+                        onZoomOut={() => setScale(s => Math.max(s - 0.1, 0.5))}
+                        isGenerating={isGeneratingAudio}
+                        isReadyForAudio={isDocumentReadyForAudio}
+                        hasAudio={!!audioDataUri}
+                        isPlaying={isPlaying}
+                        duration={duration}
+                        currentTime={currentTime}
+                     />
+                     {audioDataUri && <audio ref={audioRef} src={audioDataUri} className="hidden" />}
                   </div>
                 ) : (
                   <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
