@@ -1,7 +1,7 @@
 'use server';
 
 /**
- * @fileOverview Converts text and PDF documents into high-quality audio with a choice of different voices.
+ * @fileOverview Converts text into high-quality audio using OpenAI and Amazon Polly APIs.
  *
  * - audioConversion - A function that handles the audio conversion process.
  * - AudioConversionInput - The input type for the audioConversion function.
@@ -10,17 +10,35 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import wav from 'wav';
+import OpenAI from 'openai';
+import { PollyClient, SynthesizeSpeechCommand } from '@aws-sdk/client-polly';
+
+// Define the available voices, matching the frontend implementation
+const voices = {
+  "OpenAI": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
+  "Amazon": ["ivy", "joanna", "kendra", "kimberly", "salli", "joey", "justin", "matthew"],
+};
+
+// Initialize API clients
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const pollyClient = new PollyClient({
+    region: process.env.AWS_REGION,
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+    }
+});
+
 
 const AudioConversionInputSchema = z.object({
   text: z.string().describe('The text to convert to audio.'),
-  voiceName: z.string().optional().describe('The name of the voice to use (e.g., from OpenAI or Amazon).'),
+  voiceName: z.string().optional().describe('The name of the voice to use (e.g., "alloy" for OpenAI, "ivy" for Amazon).'),
 });
 
 export type AudioConversionInput = z.infer<typeof AudioConversionInputSchema>;
 
 const AudioConversionOutputSchema = z.object({
-  audioDataUri: z.string().describe('The audio data in WAV format as a data URI.'),
+  audioDataUri: z.string().describe('The audio data in MP3 format as a data URI.'),
 });
 
 export type AudioConversionOutput = z.infer<typeof AudioConversionOutputSchema>;
@@ -29,32 +47,17 @@ export async function audioConversion(input: AudioConversionInput): Promise<Audi
   return audioConversionFlow(input);
 }
 
-async function toWav(
-  pcmData: Buffer,
-  channels = 1,
-  rate = 24000,
-  sampleWidth = 2
-): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const writer = new wav.Writer({
-      channels,
-      sampleRate: rate,
-      bitDepth: sampleWidth * 8,
-    });
 
-    let bufs = [] as any[];
-    writer.on('error', reject);
-    writer.on('data', function (d) {
-      bufs.push(d);
+// Helper function to convert a stream to a buffer
+async function streamToBuffer(stream: any): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+        const chunks: Buffer[] = [];
+        stream.on('data', (chunk: any) => chunks.push(chunk));
+        stream.on('error', reject);
+        stream.on('end', () => resolve(Buffer.concat(chunks)));
     });
-    writer.on('end', function () {
-      resolve(Buffer.concat(bufs).toString('base64'));
-    });
-
-    writer.write(pcmData);
-    writer.end();
-  });
 }
+
 
 const audioConversionFlow = ai.defineFlow(
   {
@@ -63,40 +66,39 @@ const audioConversionFlow = ai.defineFlow(
     outputSchema: AudioConversionOutputSchema,
   },
   async input => {
-    // This flow is now structured to easily accommodate different voice providers.
-    // The actual model call can be switched based on the `input.voiceName`.
-    // NOTE: For now, we will use the Google TTS as a placeholder for all providers.
-    // In a real implementation, this would be replaced with calls to the respective
-    // OpenAI and Amazon SDKs based on which voice is selected.
-
     const voice = input.voiceName || 'alloy'; // Default to an OpenAI voice
+    let audioBuffer: Buffer;
+    let audioMimeType = 'audio/mpeg'; // Both OpenAI and our Polly config will use MP3
 
-    // Placeholder: Use Google TTS for all voices for now.
-    const {media} = await ai.generate({
-      model: 'googleai/gemini-2.5-flash-preview-tts',
-      config: {
-        responseModalities: ['AUDIO'],
-        speechConfig: {
-          voiceConfig: {
-            // A default voice is used if none is provided.
-            prebuiltVoiceConfig: {voiceName: 'Algenib'}, // Using a consistent google voice for the placeholder
-          },
-        },
-      },
-      prompt: input.text,
-    });
+    if (voices.OpenAI.includes(voice)) {
+        // --- OpenAI Text-to-Speech ---
+        const response = await openai.audio.speech.create({
+            model: "tts-1",
+            voice: voice as any,
+            input: input.text,
+            response_format: "mp3"
+        });
+        audioBuffer = Buffer.from(await response.arrayBuffer());
 
-    if (!media) {
-      throw new Error('No media returned from audio generation.');
+    } else if (voices.Amazon.includes(voice)) {
+        // --- Amazon Polly Text-to-Speech ---
+        const command = new SynthesizeSpeechCommand({
+            Text: input.text,
+            OutputFormat: 'mp3',
+            VoiceId: voice.charAt(0).toUpperCase() + voice.slice(1), // Polly voice IDs are capitalized (e.g., "Ivy")
+        });
+        const response = await pollyClient.send(command);
+        if (!response.AudioStream) {
+            throw new Error('No audio stream returned from Amazon Polly.');
+        }
+        audioBuffer = await streamToBuffer(response.AudioStream);
+
+    } else {
+        throw new Error(`Unsupported voice: ${voice}. Please select a valid voice from OpenAI or Amazon.`);
     }
 
-    const audioBuffer = Buffer.from(
-      media.url.substring(media.url.indexOf(',') + 1),
-      'base64'
-    );
+    const audioDataUri = `data:${audioMimeType};base64,${audioBuffer.toString('base64')}`;
 
-    const audioDataUri = 'data:audio/wav;base64,' + (await toWav(audioBuffer));
-
-    return {audioDataUri};
+    return { audioDataUri };
   }
 );
