@@ -65,6 +65,13 @@ const audioConversionFlow = ai.defineFlow(
   async input => {
     // This flow is now structured to easily accommodate different voice providers.
     // The actual model call can be switched based on the `input.voiceName`.
+    // NOTE: For now, we will use the Google TTS as a placeholder for all providers.
+    // In a real implementation, this would be replaced with calls to the respective
+    // OpenAI and Amazon SDKs based on which voice is selected.
+
+    const voice = input.voiceName || 'alloy'; // Default to an OpenAI voice
+
+    // Placeholder: Use Google TTS for all voices for now.
     const {media} = await ai.generate({
       model: 'googleai/gemini-2.5-flash-preview-tts',
       config: {
@@ -72,7 +79,7 @@ const audioConversionFlow = ai.defineFlow(
         speechConfig: {
           voiceConfig: {
             // A default voice is used if none is provided.
-            prebuiltVoiceConfig: {voiceName: input.voiceName || 'Algenib'},
+            prebuiltVoiceConfig: {voiceName: 'Algenib'}, // Using a consistent google voice for the placeholder
           },
         },
       },

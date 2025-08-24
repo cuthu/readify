@@ -7,6 +7,7 @@
  */
 
 import { ai } from '@/ai/genkit';
+import { Document, DocumentSchema } from '@/types/document';
 import { z } from 'genkit';
 import {
   getDocuments as getDocumentsFromService,
@@ -15,13 +16,6 @@ import {
   Document as DocumentType,
 } from '@/services/document-service';
 
-
-export const DocumentSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  content: z.string().optional(),
-});
-export type Document = z.infer<typeof DocumentSchema>;
 
 
 // Exported functions for client-side use

@@ -36,9 +36,8 @@ import { useToast } from '@/hooks/use-toast';
 import { audioConversion } from '@/ai/flows/audio-conversion';
 
 const voices = {
-  "Google": ["Algenib", "auriga", "procyon", "polaris", "spica"],
   "OpenAI": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
-  "Amazon": ["ivy", "joanna", "kendr"],
+  "Amazon": ["ivy", "joanna", "kendra"],
 };
 
 const openDialog = (id: string) => {
