@@ -6,6 +6,7 @@
 import { Redis } from "@upstash/redis";
 import { randomUUID } from "crypto";
 import { Document } from "@/types/document";
+import { del } from '@vercel/blob';
 
 // Initialize the Upstash Redis client
 // This will automatically use the UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN
@@ -73,20 +74,28 @@ export async function updateDocument(id: string, data: Partial<Omit<Document, 'i
 }
 
 /**
- * Deletes a document by its ID.
+ * Deletes a document by its ID from both Redis and Vercel Blob storage.
  * @param id - The ID of the document to delete.
  * @returns A promise that resolves when the document is deleted.
  */
 export async function deleteDocument(id:string): Promise<void> {
   const documentMap = await redis.get<Record<string, Document>>(DOCUMENTS_KEY);
   if (documentMap && documentMap[id]) {
+    const docToDelete = documentMap[id];
+    
+    // First, delete from blob storage
+    if (docToDelete.url) {
+      await del(docToDelete.url);
+    }
+    
+    // Then, delete from Redis
     delete documentMap[id];
     await redis.set(DOCUMENTS_KEY, documentMap);
   }
 }
 
 /**
- * Deletes multiple documents by their IDs.
+ * Deletes multiple documents by their IDs from both Redis and Vercel Blob storage.
  * @param ids - The array of document IDs to delete.
  * @returns A promise that resolves when the documents are deleted.
  */
@@ -94,14 +103,28 @@ export async function deleteDocuments(ids: string[]): Promise<void> {
     const documentMap = await redis.get<Record<string, Document>>(DOCUMENTS_KEY);
     if (documentMap) {
         let changed = false;
+        
+        // Create a list of blob URLs to delete
+        const urlsToDelete: string[] = [];
         ids.forEach(id => {
             if (documentMap[id]) {
+                if(documentMap[id].url) {
+                    urlsToDelete.push(documentMap[id].url);
+                }
                 delete documentMap[id];
                 changed = true;
             }
         });
+        
         if (changed) {
+            // Delete all blobs in parallel
+            if (urlsToDelete.length > 0) {
+                await del(urlsToDelete);
+            }
+            // Update the Redis map
             await redis.set(DOCUMENTS_KEY, documentMap);
         }
     }
 }
+
+    

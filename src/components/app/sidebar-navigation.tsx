@@ -52,6 +52,7 @@ const openDialog = (id: string) => {
 
 interface SidebarNavigationProps {
   onDocumentSelect: (doc: Document) => void;
+  onDocumentDeleted: (deletedDocId: string) => void;
   onVoiceChange: (voice: string) => void;
   onRateChange: (rate: number) => void;
   selectedVoice: string;
@@ -61,6 +62,7 @@ interface SidebarNavigationProps {
 
 export function SidebarNavigation({
   onDocumentSelect,
+  onDocumentDeleted,
   onVoiceChange,
   onRateChange,
   selectedVoice,
@@ -122,6 +124,7 @@ export function SidebarNavigation({
         description: 'Document deleted.',
       });
       fetchDocuments(); // Refresh the list
+      onDocumentDeleted(docId); // Notify parent component
     } catch (error) {
       toast({
         title: 'Error',
@@ -321,3 +324,5 @@ export function SidebarNavigation({
     </SidebarMenu>
   );
 }
+
+    

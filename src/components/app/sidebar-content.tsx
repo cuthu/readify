@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/use-auth';
 
 interface AppSidebarProps {
   onDocumentSelect: (doc: Document) => void;
+  onDocumentDeleted: (deletedDocId: string) => void;
   onVoiceChange: (voice: string) => void;
   onRateChange: (rate: number) => void;
   selectedVoice: string;
@@ -22,6 +23,7 @@ interface AppSidebarProps {
 
 export function AppSidebar({
     onDocumentSelect,
+    onDocumentDeleted,
     onVoiceChange,
     onRateChange,
     selectedVoice,
@@ -43,6 +45,7 @@ export function AppSidebar({
           <div className="flex-1">
             <SidebarNavigation 
               onDocumentSelect={onDocumentSelect}
+              onDocumentDeleted={onDocumentDeleted}
               onVoiceChange={onVoiceChange}
               onRateChange={onRateChange}
               selectedVoice={selectedVoice}
@@ -65,3 +68,5 @@ export function AppSidebar({
     </>
   );
 }
+
+    

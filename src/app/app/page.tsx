@@ -41,6 +41,9 @@ export default function App() {
   const [scale, setScale] = useState(1.0);
 
   const { toast } = useToast();
+
+  // Global hidden file input
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const handleFileChange = async (file: File | null) => {
     if (!file) return;
@@ -117,6 +120,10 @@ export default function App() {
         setLocalFile(null);
     } finally {
       setIsProcessingFile(false);
+       // Reset the file input so the same file can be uploaded again
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
   
@@ -129,6 +136,16 @@ export default function App() {
       setAudioDataUri(doc.audioDataUri);
     }
   }
+  
+  const handleDocumentDeleted = (deletedDocId: string) => {
+    // If the deleted document is the one being viewed, clear the view
+    if (activeDocument?.id === deletedDocId) {
+      setActiveDocument(null);
+      setLocalFile(null);
+      setDocumentContent('');
+      resetAudioState();
+    }
+  };
 
   const handleGenerateAudio = async () => {
     if (!documentContent || !activeDocument) {
@@ -257,6 +274,7 @@ export default function App() {
         <Sidebar>
             <AppSidebar 
                     onDocumentSelect={handleDocumentSelect}
+                    onDocumentDeleted={handleDocumentDeleted}
                     onVoiceChange={setSelectedVoice}
                     onRateChange={setSpeakingRate}
                     selectedVoice={selectedVoice}
@@ -267,7 +285,7 @@ export default function App() {
         <SidebarInset>
             <div data-page="app-main" className="p-4 flex flex-col h-full">
                 {/* Global hidden file input */}
-                <input type="file" id="file-upload" className="hidden" accept=".txt,.pdf,.docx" onChange={onFileSelect} disabled={isProcessingFile} />
+                <input type="file" id="file-upload" ref={fileInputRef} className="hidden" accept=".txt,.pdf,.docx" onChange={onFileSelect} disabled={isProcessingFile} />
 
                 {/* AI Tool Dialogs */}
                 <SummarizeDialog documentContent={documentContent} />
@@ -328,3 +346,5 @@ export default function App() {
     </SidebarProvider>
   );
 }
+
+    
