@@ -21,7 +21,7 @@ const featuresList = [
 
 export function Features() {
   return (
-    <section id="features" className="py-16 md:py-24 bg-secondary/50">
+    <section id="features" className="py-12 md:py-16 bg-secondary/50">
       <div className="container">
         <div className="mx-auto mb-12 max-w-2xl text-center">
           <h2 className="font-headline text-3xl font-bold tracking-tight sm:text-4xl">Key Features</h2>

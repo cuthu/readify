@@ -3,7 +3,7 @@ import Link from 'next/link';
 
 export function Hero() {
   return (
-    <section className="py-20 md:py-24">
+    <section className="py-16 md:py-20">
       <div className="container text-center">
         <h1 className="font-headline text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl">
           Transform Documents into Knowledge
