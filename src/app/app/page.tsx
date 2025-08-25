@@ -121,7 +121,7 @@ export default function App() {
       setIsProcessingFile(false);
        // Reset the file input so the same file can be uploaded again
       if (fileInputRef.current) {
-        fileInput.current.value = '';
+        fileInputRef.current.value = '';
       }
     }
   };
