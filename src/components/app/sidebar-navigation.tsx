@@ -5,50 +5,31 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
-  SidebarGroup,
 } from '@/components/ui/sidebar';
 import {
   UploadCloud,
   Mic,
   Gauge,
-  Sparkles,
-  Folder,
-  Trash2,
-  FileText,
-  ChevronDown,
   LayoutDashboard,
-  Volume2,
-  MessageSquare,
-  List,
-  Book,
-  FileQuestion,
-  Loader2,
 } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getDocuments, deleteDocument } from '@/ai/flows/document-management';
-import { Document } from '@/types/document';
 import { useToast } from '@/hooks/use-toast';
 import { audioConversion } from '@/ai/flows/audio-conversion';
 import { useAuth } from '@/hooks/use-auth';
 import Link from 'next/link';
+import { AiTools } from './ai-tools';
+import { DocumentList } from './document-list';
+import type { Document } from '@/types/document';
+
 
 const voices = {
   "Amazon": ["ivy", "joanna", "kendra", "kimberly", "salli", "joey", "justin", "matthew"],
   "OpenAI": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
 };
 
-const openDialog = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-        element.click();
-    }
-}
 
 interface SidebarNavigationProps {
   onDocumentSelect: (doc: Document) => void;
@@ -69,73 +50,13 @@ export function SidebarNavigation({
   speakingRate,
   documentContent,
 }: SidebarNavigationProps) {
-  const { user, isUser } = useAuth();
-  const [aiToolsOpen, setAiToolsOpen] = useState(true);
-  const [myDocsOpen, setMyDocsOpen] = useState(true);
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [isLoadingDocs, setIsLoadingDocs] = useState(true);
-  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const { isUser } = useAuth();
   const [isPreviewingVoice, setIsPreviewingVoice] = useState<string | null>(null);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
 
   const isAiToolsDisabled = !documentContent;
 
-  const fetchDocuments = async () => {
-    setIsLoadingDocs(true);
-    try {
-      const docs = await getDocuments();
-      const userDocs = docs.filter(doc => doc.userId === user?.id);
-      setDocuments(userDocs);
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Could not fetch your documents.',
-        variant: 'destructive',
-      });
-      console.error(error);
-    } finally {
-      setIsLoadingDocs(false);
-    }
-  };
-
-  useEffect(() => {
-    if (user) {
-        fetchDocuments();
-    }
-    // Listen for the custom event to refresh documents
-    const handleDocAdded = () => {
-        if(user) fetchDocuments();
-    };
-    window.addEventListener('document-added', handleDocAdded);
-    return () => {
-        window.removeEventListener('document-added', handleDocAdded);
-    }
-  }, [user]);
-
-  const handleDeleteDocument = async (e: React.MouseEvent, docId: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDeleting(docId);
-    try {
-      await deleteDocument(docId);
-      toast({
-        title: 'Success',
-        description: 'Document deleted.',
-      });
-      fetchDocuments(); // Refresh the list
-      onDocumentDeleted(docId); // Notify parent component
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Could not delete the document.',
-        variant: 'destructive',
-      });
-      console.error(error);
-    } finally {
-      setIsDeleting(null);
-    }
-  };
 
   const handlePreviewVoice = async (e: React.MouseEvent, voice: string) => {
     e.stopPropagation();
@@ -189,14 +110,13 @@ export function SidebarNavigation({
                                 <SelectItem key={voice} value={voice}>
                                     <div className="flex items-center justify-between w-full">
                                         <span>{voice.charAt(0).toUpperCase() + voice.slice(1)}</span>
-                                        {isPreviewingVoice === voice ? (
-                                          <Loader2 className="ml-4 h-4 w-4 animate-spin" />
-                                        ) : (
-                                          <Volume2
-                                            className="ml-4 h-4 w-4 text-muted-foreground hover:text-foreground cursor-pointer"
-                                            onClick={(e) => handlePreviewVoice(e, voice)}
-                                          />
-                                        )}
+                                        <button onClick={(e) => handlePreviewVoice(e, voice)} disabled={!!isPreviewingVoice} className="p-1">
+                                          {isPreviewingVoice === voice ? (
+                                              <span className="h-4 w-4 animate-spin border-2 border-current border-t-transparent rounded-full inline-block" />
+                                          ) : (
+                                              <span className="lucide lucide-volume-2 h-4 w-4 text-muted-foreground hover:text-foreground" />
+                                          )}
+                                        </button>
                                     </div>
                                 </SelectItem>
                             ))}
@@ -227,87 +147,9 @@ export function SidebarNavigation({
         </div>
       </SidebarMenuItem>
 
-      <SidebarGroup>
-        <SidebarMenuItem>
-          <SidebarMenuButton onClick={() => setAiToolsOpen(!aiToolsOpen)} isActive={aiToolsOpen}>
-            <Sparkles />
-            AI Tools
-            <ChevronDown
-              className={`ml-auto h-4 w-4 transform transition-transform ${
-                aiToolsOpen ? 'rotate-180' : ''
-              }`}
-            />
-          </SidebarMenuButton>
-          {aiToolsOpen && (
-            <SidebarMenuSub>
-              <SidebarMenuSubItem>
-                  <SidebarMenuSubButton onClick={() => openDialog('learn-dialog-trigger')} disabled={isAiToolsDisabled}>
-                      <MessageSquare className="mr-2 h-4 w-4" />
-                      <span>Chat with Document</span>
-                  </SidebarMenuSubButton>
-              </SidebarMenuSubItem>
-              <SidebarMenuSubItem>
-                  <SidebarMenuSubButton onClick={() => openDialog('summarize-dialog-trigger')} disabled={isAiToolsDisabled}>
-                      <List className="mr-2 h-4 w-4" />
-                      <span>Summarize & Key Points</span>
-                  </SidebarMenuSubButton>
-              </SidebarMenuSubItem>
-              <SidebarMenuSubItem>
-                  <SidebarMenuSubButton onClick={() => openDialog('summarize-dialog-trigger')} disabled={isAiToolsDisabled}>
-                      <Book className="mr-2 h-4 w-4" />
-                      <span>Create Glossary</span>
-                  </SidebarMenuSubButton>
-              </SidebarMenuSubItem>
-              <SidebarMenuSubItem>
-                  <SidebarMenuSubButton onClick={() => openDialog('learn-dialog-trigger')} disabled={isAiToolsDisabled}>
-                      <FileQuestion className="mr-2 h-4 w-4" />
-                      <span>Generate Quiz</span>
-                  </SidebarMenuSubButton>
-              </SidebarMenuSubItem>
-            </SidebarMenuSub>
-          )}
-        </SidebarMenuItem>
-      </SidebarGroup>
+      <AiTools isAiToolsDisabled={isAiToolsDisabled} />
 
-       <SidebarGroup>
-        <SidebarMenuItem>
-          <SidebarMenuButton onClick={() => setMyDocsOpen(!myDocsOpen)} isActive={myDocsOpen}>
-            <Folder />
-            My Documents
-             <ChevronDown
-              className={`ml-auto h-4 w-4 transform transition-transform ${
-                myDocsOpen ? 'rotate-180' : ''
-              }`}
-            />
-          </SidebarMenuButton>
-          {myDocsOpen && (
-            <SidebarMenuSub>
-              {isLoadingDocs ? (
-                 <div className="flex justify-center items-center p-2"><Loader2 className="h-4 w-4 animate-spin" /></div>
-              ) : documents.length > 0 ? (
-                documents.map(doc => (
-                  <SidebarMenuSubItem key={doc.id}>
-                    <SidebarMenuSubButton onClick={() => onDocumentSelect(doc)}>
-                        <FileText className="mr-2 h-4 w-4" />
-                        <span className="truncate">{doc.name}</span>
-                        {isDeleting === doc.id ? (
-                          <Loader2 className="ml-auto h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash2
-                            className="ml-auto h-4 w-4 text-muted-foreground transition-colors hover:text-destructive"
-                            onClick={(e) => handleDeleteDocument(e, doc.id)}
-                          />
-                        )}
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-                ))
-              ) : (
-                <p className="px-4 py-2 text-xs text-muted-foreground">No documents found.</p>
-              )}
-            </SidebarMenuSub>
-          )}
-        </SidebarMenuItem>
-      </SidebarGroup>
+      <DocumentList onDocumentSelect={onDocumentSelect} onDocumentDeleted={onDocumentDeleted} />
       
       {!isUser() && (
         <SidebarMenuItem>
@@ -324,5 +166,3 @@ export function SidebarNavigation({
     </SidebarMenu>
   );
 }
-
-    

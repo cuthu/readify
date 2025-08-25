@@ -268,18 +268,21 @@ export default function App() {
 
   const isDocumentReadyForAudio = !!documentContent && (!isProcessingFile || localFile !== null);
 
+  const sidebarProps = {
+    onDocumentSelect: handleDocumentSelect,
+    onDocumentDeleted: handleDocumentDeleted,
+    onVoiceChange: setSelectedVoice,
+    onRateChange: setSpeakingRate,
+    selectedVoice: selectedVoice,
+    speakingRate: speakingRate,
+    documentContent: documentContent,
+  };
+
+
   return (
       <SidebarProvider>
           <Sidebar>
-              <AppSidebar 
-                  onDocumentSelect={handleDocumentSelect}
-                  onDocumentDeleted={handleDocumentDeleted}
-                  onVoiceChange={setSelectedVoice}
-                  onRateChange={setSpeakingRate}
-                  selectedVoice={selectedVoice}
-                  speakingRate={speakingRate}
-                  documentContent={documentContent}
-              />
+              <AppSidebar {...sidebarProps} />
           </Sidebar>
           <SidebarInset>
             <div data-page="app-main" className="p-4 flex flex-col h-full">

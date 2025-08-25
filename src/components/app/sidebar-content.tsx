@@ -1,7 +1,6 @@
 
 'use client';
 
-import type {Document} from '@/ai/flows/document-management';
 import { SidebarContent, SidebarHeader, SidebarTrigger } from '@/components/ui/sidebar';
 import { SidebarNavigation } from './sidebar-navigation';
 import { SidebarUser } from './sidebar-user';
@@ -9,6 +8,8 @@ import { Separator } from '../ui/separator';
 import { Button } from '../ui/button';
 import { LogOut } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
+import type { Document } from '@/types/document';
+
 
 export interface AppSidebarProps {
   onDocumentSelect: (doc: Document) => void;
@@ -21,15 +22,7 @@ export interface AppSidebarProps {
 }
 
 
-export function AppSidebar({
-    onDocumentSelect,
-    onDocumentDeleted,
-    onVoiceChange,
-    onRateChange,
-    selectedVoice,
-    speakingRate,
-    documentContent,
-}: AppSidebarProps) {
+export function AppSidebar(props: AppSidebarProps) {
   const { logout } = useAuth();
 
   return (
@@ -43,15 +36,7 @@ export function AppSidebar({
       <SidebarContent>
         <div className="flex flex-col h-full">
           <div className="flex-1">
-            <SidebarNavigation 
-              onDocumentSelect={onDocumentSelect}
-              onDocumentDeleted={onDocumentDeleted}
-              onVoiceChange={onVoiceChange}
-              onRateChange={onRateChange}
-              selectedVoice={selectedVoice}
-              speakingRate={speakingRate}
-              documentContent={documentContent}
-            />
+            <SidebarNavigation {...props} />
           </div>
           <div>
             <Separator className="my-2" />
