@@ -2,26 +2,17 @@
 
 'use client';
 
-import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
-import { AppSidebar, type AppSidebarProps } from '@/components/app/sidebar-content';
+// Note: The main sidebar logic has been moved to page.tsx to correctly handle state passing.
+// This layout now only provides the root structure.
 
 interface AppLayoutProps {
     children: React.ReactNode;
-    sidebarProps: AppSidebarProps;
 }
 
-export default function AppLayout({ children, sidebarProps }: AppLayoutProps) {
-    
+export default function AppLayout({ children }: AppLayoutProps) {
     return (
         <div className="dark bg-background text-foreground min-h-screen">
-           <SidebarProvider>
-                <Sidebar>
-                    <AppSidebar {...sidebarProps} />
-                </Sidebar>
-                <SidebarInset>
-                    {children}
-                </SidebarInset>
-            </SidebarProvider>
+            {children}
         </div>
     )
 }

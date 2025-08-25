@@ -14,7 +14,8 @@ import { Document } from '@/types/document';
 import { useAuth } from '@/hooks/use-auth';
 import { DocumentViewer } from '@/components/app/main/document-viewer';
 import { PlayerBar } from '@/components/app/main/player-bar';
-import AppLayout from './layout';
+import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
+import { AppSidebar } from '@/components/app/sidebar-content';
 
 export default function App() {
   const { user } = useAuth();
@@ -267,84 +268,87 @@ export default function App() {
 
   const isDocumentReadyForAudio = !!documentContent && (!isProcessingFile || localFile !== null);
 
-  const sidebarProps = {
-    onDocumentSelect: handleDocumentSelect,
-    onDocumentDeleted: handleDocumentDeleted,
-    onVoiceChange: setSelectedVoice,
-    onRateChange: setSpeakingRate,
-    selectedVoice,
-    speakingRate,
-    documentContent,
-  };
-
   return (
-    <AppLayout sidebarProps={sidebarProps}>
-       <div data-page="app-main" className="p-4 flex flex-col h-full">
-          {/* Hidden file input, always available */}
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={onFileSelect} 
-            className="hidden" 
-            accept=".pdf,.txt,.docx"
-            id="file-upload"
-          />
+      <SidebarProvider>
+          <Sidebar>
+              <AppSidebar 
+                  onDocumentSelect={handleDocumentSelect}
+                  onDocumentDeleted={handleDocumentDeleted}
+                  onVoiceChange={setSelectedVoice}
+                  onRateChange={setSpeakingRate}
+                  selectedVoice={selectedVoice}
+                  speakingRate={speakingRate}
+                  documentContent={documentContent}
+              />
+          </Sidebar>
+          <SidebarInset>
+            <div data-page="app-main" className="p-4 flex flex-col h-full">
+                {/* Hidden file input, always available */}
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={onFileSelect} 
+                  className="hidden" 
+                  accept=".pdf,.txt,.docx"
+                  id="file-upload"
+                />
 
-          {/* AI Tool Dialogs */}
-          <SummarizeDialog documentContent={documentContent} />
-          <LearnDialog documentContent={documentContent} />
-          
-          {activeDocument ? (
-            <div className="flex-1 flex flex-col h-full min-h-0">
-              <div className="flex-1 overflow-auto">
-                  <DocumentViewer 
-                      file={localFile || activeDocument.url} 
-                      scale={scale} 
-                      onTextExtracted={handleTextExtracted}
-                  />
-              </div>
-               <PlayerBar 
-                  onGenerateAudio={handleGenerateAudio}
-                  onPlayPause={handlePlayPause}
-                  onSeek={handleSeek}
-                  onZoomIn={() => setScale(s => Math.min(s + 0.1, 2.0))}
-                  onZoomOut={() => setScale(s => Math.max(s - 0.1, 0.5))}
-                  isGenerating={isGeneratingAudio}
-                  isReadyForAudio={isDocumentReadyForAudio}
-                  hasAudio={!!audioDataUri}
-                  isPlaying={isPlaying}
-                  duration={duration}
-                  currentTime={currentTime}
-               />
-               {audioDataUri && <audio ref={audioRef} src={audioDataUri} className="hidden" />}
+                {/* AI Tool Dialogs */}
+                <SummarizeDialog documentContent={documentContent} />
+                <LearnDialog documentContent={documentContent} />
+                
+                {activeDocument ? (
+                  <div className="flex-1 flex flex-col h-full min-h-0">
+                    <div className="flex-1 overflow-auto">
+                        <DocumentViewer 
+                            file={localFile || activeDocument.url} 
+                            scale={scale} 
+                            onTextExtracted={handleTextExtracted}
+                        />
+                    </div>
+                    <PlayerBar 
+                        onGenerateAudio={handleGenerateAudio}
+                        onPlayPause={handlePlayPause}
+                        onSeek={handleSeek}
+                        onZoomIn={() => setScale(s => Math.min(s + 0.1, 2.0))}
+                        onZoomOut={() => setScale(s => Math.max(s - 0.1, 0.5))}
+                        isGenerating={isGeneratingAudio}
+                        isReadyForAudio={isDocumentReadyForAudio}
+                        hasAudio={!!audioDataUri}
+                        isPlaying={isPlaying}
+                        duration={duration}
+                        currentTime={currentTime}
+                    />
+                    {audioDataUri && <audio ref={audioRef} src={audioDataUri} className="hidden" />}
+                  </div>
+                ) : (
+                  <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                      <TabsList className="grid w-full grid-cols-2">
+                          <TabsTrigger value="upload">Upload Document</TabsTrigger>
+                          <TabsTrigger value="tts">Text to Speech</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="upload">
+                          <UploadTab 
+                              onDragEnter={onDragEnter}
+                              onDragLeave={onDragLeave}
+                              onDragOver={onDragOver}
+                              onDrop={onDrop}
+                              isDragging={isDragging}
+                              isProcessing={isProcessingFile}
+                              onBrowseClick={() => fileInputRef.current?.click()}
+                          />
+                      </TabsContent>
+                      <TabsContent value="tts">
+                          <TtsTab 
+                              initialText={documentContent} 
+                              selectedVoice={selectedVoice}
+                              speakingRate={speakingRate}
+                          />
+                      </TabsContent>
+                  </Tabs>
+                )}
             </div>
-          ) : (
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="upload">Upload Document</TabsTrigger>
-                    <TabsTrigger value="tts">Text to Speech</TabsTrigger>
-                </TabsList>
-                <TabsContent value="upload">
-                    <UploadTab 
-                        onDragEnter={onDragEnter}
-                        onDragLeave={onDragLeave}
-                        onDragOver={onDragOver}
-                        onDrop={onDrop}
-                        isDragging={isDragging}
-                        isProcessing={isProcessingFile}
-                        onBrowseClick={() => fileInputRef.current?.click()}
-                    />
-                </TabsContent>
-                <TabsContent value="tts">
-                    <TtsTab 
-                        initialText={documentContent} 
-                        selectedVoice={selectedVoice}
-                        speakingRate={speakingRate}
-                    />
-                </TabsContent>
-            </Tabs>
-          )}
-      </div>
-    </AppLayout>
+          </SidebarInset>
+      </SidebarProvider>
   );
 }
