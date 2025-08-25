@@ -10,7 +10,7 @@ import { Button } from '../ui/button';
 import { LogOut } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 
-interface AppSidebarProps {
+export interface AppSidebarProps {
   onDocumentSelect: (doc: Document) => void;
   onDocumentDeleted: (deletedDocId: string) => void;
   onVoiceChange: (voice: string) => void;
@@ -68,5 +68,3 @@ export function AppSidebar({
     </>
   );
 }
-
-    

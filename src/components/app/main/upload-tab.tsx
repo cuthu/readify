@@ -12,7 +12,6 @@ interface UploadTabProps {
   onDrop: (e: React.DragEvent<HTMLDivElement>) => void;
   isDragging: boolean;
   isProcessing: boolean;
-  uploadedFile: File | null;
 }
 
 export function UploadTab({
@@ -22,7 +21,6 @@ export function UploadTab({
   onDrop,
   isDragging,
   isProcessing,
-  uploadedFile,
 }: UploadTabProps) {
   return (
     <Card>
@@ -47,11 +45,7 @@ export function UploadTab({
             ) : (
                 <>
                     <Upload className="h-8 w-8" />
-                    {uploadedFile ? (
-                    <p>{uploadedFile.name}</p>
-                    ) : (
                     <p>Click to browse or drag & drop</p>
-                    )}
                 </>
             )}
           </label>
