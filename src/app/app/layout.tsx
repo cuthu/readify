@@ -11,7 +11,7 @@ interface AppLayoutProps {
     sidebarProps: AppSidebarProps;
 }
 
-export function AppLayout({ children, sidebarProps }: AppLayoutProps) {
+export default function AppLayout({ children, sidebarProps }: AppLayoutProps) {
     
     return (
         <div className="dark bg-background text-foreground min-h-screen">

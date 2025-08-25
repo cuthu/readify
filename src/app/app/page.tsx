@@ -11,11 +11,10 @@ import { UploadTab } from '@/components/app/main/upload-tab';
 import { uploadDocument, processAndSaveDocument, addAudioToDocument } from '@/ai/flows/document-management';
 import { audioConversion } from '@/ai/flows/audio-conversion';
 import { Document } from '@/types/document';
-import { AppLayout } from './layout'; // Import AppLayout
 import { useAuth } from '@/hooks/use-auth';
 import { DocumentViewer } from '@/components/app/main/document-viewer';
 import { PlayerBar } from '@/components/app/main/player-bar';
-
+import AppLayout from './layout';
 
 export default function App() {
   const { user } = useAuth();
@@ -268,21 +267,27 @@ export default function App() {
 
   const isDocumentReadyForAudio = !!documentContent && (!isProcessingFile || localFile !== null);
 
+  const sidebarProps = {
+    onDocumentSelect: handleDocumentSelect,
+    onDocumentDeleted: handleDocumentDeleted,
+    onVoiceChange: setSelectedVoice,
+    onRateChange: setSpeakingRate,
+    selectedVoice,
+    speakingRate,
+    documentContent,
+  };
+
   return (
-    <AppLayout
-        sidebarProps={{
-            onDocumentSelect: handleDocumentSelect,
-            onDocumentDeleted: handleDocumentDeleted,
-            onVoiceChange: setSelectedVoice,
-            onRateChange: setSpeakingRate,
-            selectedVoice: selectedVoice,
-            speakingRate: speakingRate,
-            documentContent: documentContent,
-        }}
-    >
+    <AppLayout sidebarProps={sidebarProps}>
       <div data-page="app-main" className="p-4 flex flex-col h-full">
-          {/* Global hidden file input */}
-          <input type="file" id="file-upload" ref={fileInputRef} className="hidden" accept=".txt,.pdf,.docx" onChange={onFileSelect} disabled={isProcessingFile} />
+          {/* Hidden file input, always available */}
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={onFileSelect} 
+            className="hidden" 
+            accept=".pdf,.txt,.docx"
+          />
 
           {/* AI Tool Dialogs */}
           <SummarizeDialog documentContent={documentContent} />
@@ -326,6 +331,7 @@ export default function App() {
                         onDrop={onDrop}
                         isDragging={isDragging}
                         isProcessing={isProcessingFile}
+                        onBrowseClick={() => fileInputRef.current?.click()}
                     />
                 </TabsContent>
                 <TabsContent value="tts">

@@ -10,6 +10,7 @@ interface UploadTabProps {
   onDragLeave: (e: React.DragEvent<HTMLDivElement>) => void;
   onDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
   onDrop: (e: React.DragEvent<HTMLDivElement>) => void;
+  onBrowseClick: () => void;
   isDragging: boolean;
   isProcessing: boolean;
 }
@@ -19,6 +20,7 @@ export function UploadTab({
   onDragLeave,
   onDragOver,
   onDrop,
+  onBrowseClick,
   isDragging,
   isProcessing,
 }: UploadTabProps) {
@@ -34,9 +36,10 @@ export function UploadTab({
           onDragLeave={onDragLeave}
           onDragOver={onDragOver}
           onDrop={onDrop}
+          onClick={onBrowseClick}
           className={cn("flex h-32 w-full cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/50 bg-muted/20 text-center transition-colors hover:border-primary", { "border-primary bg-primary/10": isDragging })}
         >
-          <label htmlFor="file-upload" className={cn("flex flex-col items-center gap-2 text-muted-foreground", isProcessing ? "cursor-not-allowed" : "cursor-pointer")}>
+          <div className={cn("flex flex-col items-center gap-2 text-muted-foreground", isProcessing ? "cursor-not-allowed" : "cursor-pointer")}>
             {isProcessing ? (
                 <>
                     <Loader2 className="h-8 w-8 animate-spin" />
@@ -48,7 +51,7 @@ export function UploadTab({
                     <p>Click to browse or drag & drop</p>
                 </>
             )}
-          </label>
+          </div>
         </div>
       </CardContent>
     </Card>
