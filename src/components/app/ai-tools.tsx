@@ -1,7 +1,6 @@
 
 'use client';
 
-import { useState } from 'react';
 import {
   SidebarGroup,
   SidebarMenuItem,
@@ -18,6 +17,8 @@ import {
   Book,
   FileQuestion,
 } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useState } from 'react';
 
 const openDialog = (id: string) => {
     const element = document.getElementById(id);
@@ -32,6 +33,24 @@ interface AiToolsProps {
 
 export function AiTools({ isAiToolsDisabled }: AiToolsProps) {
   const [aiToolsOpen, setAiToolsOpen] = useState(true);
+
+  const disabledTooltip = "Please upload and select a document first.";
+
+  const ToolButton = ({ onClick, disabled, tooltip, children }: { onClick: () => void, disabled: boolean, tooltip: string, children: React.ReactNode }) => (
+     <Tooltip>
+        <TooltipTrigger asChild>
+             {/* We need a div wrapper for the tooltip to work correctly on disabled buttons */}
+            <div className="w-full">
+                <SidebarMenuSubButton onClick={onClick} disabled={disabled}>
+                    {children}
+                </SidebarMenuSubButton>
+            </div>
+        </TooltipTrigger>
+        <TooltipContent side="right" align="center">
+            {disabled ? disabledTooltip : tooltip}
+        </TooltipContent>
+    </Tooltip>
+  )
 
   return (
     <SidebarGroup>
@@ -48,28 +67,28 @@ export function AiTools({ isAiToolsDisabled }: AiToolsProps) {
         {aiToolsOpen && (
           <SidebarMenuSub>
             <SidebarMenuSubItem>
-                <SidebarMenuSubButton onClick={() => openDialog('learn-dialog-trigger')} disabled={isAiToolsDisabled}>
+                 <ToolButton onClick={() => openDialog('learn-dialog-trigger')} disabled={isAiToolsDisabled} tooltip="Chat with Document">
                     <MessageSquare className="mr-2 h-4 w-4" />
                     <span>Chat with Document</span>
-                </SidebarMenuSubButton>
+                </ToolButton>
             </SidebarMenuSubItem>
             <SidebarMenuSubItem>
-                <SidebarMenuSubButton onClick={() => openDialog('summarize-dialog-trigger')} disabled={isAiToolsDisabled}>
+                 <ToolButton onClick={() => openDialog('summarize-dialog-trigger')} disabled={isAiToolsDisabled} tooltip="Summarize & Key Points">
                     <List className="mr-2 h-4 w-4" />
                     <span>Summarize & Key Points</span>
-                </SidebarMenuSubButton>
+                </ToolButton>
             </SidebarMenuSubItem>
             <SidebarMenuSubItem>
-                <SidebarMenuSubButton onClick={() => openDialog('summarize-dialog-trigger')} disabled={isAiToolsDisabled}>
+                <ToolButton onClick={() => openDialog('summarize-dialog-trigger')} disabled={isAiToolsDisabled} tooltip="Create Glossary">
                     <Book className="mr-2 h-4 w-4" />
                     <span>Create Glossary</span>
-                </SidebarMenuSubButton>
+                </ToolButton>
             </SidebarMenuSubItem>
             <SidebarMenuSubItem>
-                <SidebarMenuSubButton onClick={() => openDialog('learn-dialog-trigger')} disabled={isAiToolsDisabled}>
+                <ToolButton onClick={() => openDialog('learn-dialog-trigger')} disabled={isAiToolsDisabled} tooltip="Generate Quiz">
                     <FileQuestion className="mr-2 h-4 w-4" />
                     <span>Generate Quiz</span>
-                </SidebarMenuSubButton>
+                </ToolButton>
             </SidebarMenuSubItem>
           </SidebarMenuSub>
         )}
