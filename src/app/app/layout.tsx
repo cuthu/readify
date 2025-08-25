@@ -2,7 +2,6 @@
 
 'use client';
 
-import type {Document} from '@/ai/flows/document-management';
 import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar, type AppSidebarProps } from '@/components/app/sidebar-content';
 

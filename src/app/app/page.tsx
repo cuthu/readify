@@ -279,7 +279,7 @@ export default function App() {
 
   return (
     <AppLayout sidebarProps={sidebarProps}>
-      <div data-page="app-main" className="p-4 flex flex-col h-full">
+       <div data-page="app-main" className="p-4 flex flex-col h-full">
           {/* Hidden file input, always available */}
           <input 
             type="file" 
@@ -287,6 +287,7 @@ export default function App() {
             onChange={onFileSelect} 
             className="hidden" 
             accept=".pdf,.txt,.docx"
+            id="file-upload"
           />
 
           {/* AI Tool Dialogs */}
