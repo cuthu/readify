@@ -10,7 +10,6 @@ interface UploadTabProps {
   onDragLeave: (e: React.DragEvent<HTMLDivElement>) => void;
   onDragOver: (e: React.DragEvent<HTMLDivElement>) => void;
   onDrop: (e: React.DragEvent<HTMLDivElement>) => void;
-  onFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
   isDragging: boolean;
   isProcessing: boolean;
   uploadedFile: File | null;
@@ -21,7 +20,6 @@ export function UploadTab({
   onDragLeave,
   onDragOver,
   onDrop,
-  onFileSelect,
   isDragging,
   isProcessing,
   uploadedFile,
@@ -40,7 +38,6 @@ export function UploadTab({
           onDrop={onDrop}
           className={cn("flex h-32 w-full cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/50 bg-muted/20 text-center transition-colors hover:border-primary", { "border-primary bg-primary/10": isDragging })}
         >
-          <input type="file" id="file-upload" className="hidden" accept=".txt,.pdf,.docx" onChange={onFileSelect} disabled={isProcessing} />
           <label htmlFor="file-upload" className={cn("flex flex-col items-center gap-2 text-muted-foreground", isProcessing ? "cursor-not-allowed" : "cursor-pointer")}>
             {isProcessing ? (
                 <>

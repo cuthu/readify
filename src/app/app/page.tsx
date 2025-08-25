@@ -266,6 +266,9 @@ export default function App() {
         </Sidebar>
         <SidebarInset>
             <div data-page="app-main" className="p-4 flex flex-col h-full">
+                {/* Global hidden file input */}
+                <input type="file" id="file-upload" className="hidden" accept=".txt,.pdf,.docx" onChange={onFileSelect} disabled={isProcessingFile} />
+
                 {/* AI Tool Dialogs */}
                 <SummarizeDialog documentContent={documentContent} />
                 <LearnDialog documentContent={documentContent} />
@@ -306,7 +309,6 @@ export default function App() {
                               onDragLeave={onDragLeave}
                               onDragOver={onDragOver}
                               onDrop={onDrop}
-                              onFileSelect={onFileSelect}
                               isDragging={isDragging}
                               isProcessing={isProcessingFile}
                               uploadedFile={localFile}
